@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js" // Changed from "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. Define the choices (Enums)
+enum PlanType {
+  CUTTING
+  BULKING
+  RECOMP
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum UnitSystem {
+  METRIC
+  IMPERIAL
+}
+
+// 2. Define the main data table
+model DietaryConstraint {
+  id          String     @id @default(uuid())
+  planType    PlanType
+  gender      Gender
+  unitSystem  UnitSystem
+  height      Float      // Use Float for decimals (e.g., 175.5 cm)
+  weight      Float
+  preferences String[]   // An array of strings for things like "Vegan", "No Nuts"
+
+  // Link back to the User
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+}
+
+model User {
+id          String              @id @default(uuid())
+email       String              @unique
+name        String?
+constraints DietaryConstraint[]
+}
