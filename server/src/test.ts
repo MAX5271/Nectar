@@ -1,6 +1,6 @@
 // If you don't have dotenv installed, run: npm install dotenv
 import 'dotenv/config'; 
-import { generateAIPDietPlan } from './services/geminiService.js';
+import { geminiService } from './services/geminiService.js';
 import { Gender,UnitSystem,PlanType } from '@prisma/client';
 
 const dummyUser = {
@@ -17,7 +17,7 @@ const runTest = async () => {
     console.log("Sending order to Chef Gemini... 👨‍🍳");
     
     try {
-        const finalPlan = await generateAIPDietPlan(dummyUser);
+        const finalPlan = await geminiService.generateAIPDietPlan(dummyUser);
         
         console.log("\n--- FINAL PARSED JSON OBJECT ---");
         // We use JSON.stringify to print the object nicely in the terminal
