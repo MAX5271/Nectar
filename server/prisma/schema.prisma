@@ -37,6 +37,7 @@ model DietaryConstraint {
   unitSystem  UnitSystem
   height      Float      // Use Float for decimals (e.g., 175.5 cm)
   weight      Float
+  age         Int
   preferences String[]   // An array of strings for things like "Vegan", "No Nuts"
 
   // Link back to the User
@@ -47,6 +48,6 @@ model DietaryConstraint {
 model User {
 id          String              @id @default(uuid())
 email       String              @unique
-name        String?
+username       String?
 constraints DietaryConstraint[]
 }
