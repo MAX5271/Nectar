@@ -8,13 +8,13 @@ if (!accessSecret || !refreshSecret) {
 }
 
 class JWT {
-    async accessTokenGenerator(id: string){
+    accessTokenGenerator(id: string){
         return jwt.sign({id:id},accessSecret as string,{expiresIn:'30m'});
     }
-    async refreshTokenGenerator(id:string){
+    refreshTokenGenerator(id:string){
         return jwt.sign({id:id},refreshSecret as string,{expiresIn: '7d'});
     }
-    async refreshVerifier(token:string){
+    refreshVerifier(token:string){
         return jwt.verify(token,refreshSecret as string);
     }
 }

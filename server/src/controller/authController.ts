@@ -7,7 +7,7 @@ class AuthController{
             const {email,password} = req.body;
             const {accessToken,refreshToken,username,id} = await authService.login({email,password});
             if(!id){
-                res.status(403).json({
+                return res.status(403).json({
                     "message":"Invalid email or password.",
                     "response":{}
                 });
@@ -18,7 +18,7 @@ class AuthController{
                 httpOnly: true,
                 secure: true
             });
-            res.status(200).json({
+            return res.status(200).json({
                 "message":"User successfully logged-in",
                 "response":{
                     accessToken,
@@ -27,6 +27,25 @@ class AuthController{
                     id
                 }
             });
+        } catch (error) {
+            res.status(404).json({
+                "message":"Internal server error",
+                response:{}
+            });
+        }
+    }
+
+    async refresh(req:Request,res:Response){
+        try {
+            const cookie = req.cookies;
+            if(!cookie?.jwt) return res.status(403).json({
+                    "message":"Refresh Token not found",
+                    "response":{}
+                });
+            
+            const result = await authService.refreshToken(cookie.jwt);
+            return res.json(result);
+                
         } catch (error) {
             res.status(404).json({
                 "message":"Internal server error",

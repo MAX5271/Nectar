@@ -16,6 +16,22 @@ class AuthRepository {
             }
             return user;
         }
+    async updateRefreshToken(id:string,token:string){
+        const user = await prisma.user.findUnique({
+            where:{
+                id
+            }
+        });
+        if(!user) throw new Error("User not found");
+        await prisma.user.update({
+            where:{
+                id
+            },
+            data:{
+                refreshToken:token
+            }
+        })
+    }
 }
 
 export const authRepository = new AuthRepository();
