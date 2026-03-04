@@ -6,13 +6,13 @@ class UserController {
     try {
       const { email, username, password } = req.body;
       const result = await userService.signUp({ email, username, password });
-       if(!result) {
-            res.status(401).json({
-                success: false,
-                data: {},
-                message: "User already exists"
-            });
-        }
+      if(!result) {
+        res.status(401).json({
+          success: false,
+          data: {},
+          message: "User already exists"
+        });
+      }
       res.status(200).json({
         message: "User created successfully",
         response: {

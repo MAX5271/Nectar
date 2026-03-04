@@ -1,9 +1,9 @@
-import express, { urlencoded }  from "express";
-import authRouter from "./routes/auth.js";
-import bodyParser from "body-parser";
 import dotenv from 'dotenv/config'
-import path from "node:path";
-
+import express, { urlencoded }  from "express";
+import authRouter from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js"
+import bodyParser from "body-parser";
+// import path from "node:path";
 
 const app = express();
 
@@ -13,6 +13,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.use('/api/auth',authRouter);
+app.use('/api/user',userRoutes);
 
 app.listen(PORT, ()=>{
     console.log(`Server is listening on port ${PORT}`);

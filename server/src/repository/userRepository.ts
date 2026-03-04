@@ -10,7 +10,7 @@ class UserRepository{
     ){
         const duplicateUser = await prisma.user.findUnique({
             where:{
-                email:email
+                email:email.toLowerCase()
             }
         });
         if(duplicateUser){
@@ -20,25 +20,10 @@ class UserRepository{
         const user = await prisma.user.create({
             data:{
                 username,
-                email,
+                email:email.toLowerCase().trim(),
                 password:encryptedPassword
             }
         })
-        return user;
-    }
-
-    async login(email:string,password:string){
-        const user = await prisma.user.findUnique({
-            where:{
-                email
-            }
-        });
-        if(!user){
-            throw new Error("User not found.");
-        }
-        if(!bcrypt.compareSync(password,user.password)){
-            throw new Error("Invalid Password");
-        }
         return user;
     }
 

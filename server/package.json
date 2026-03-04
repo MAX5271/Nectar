@@ -13,7 +13,9 @@
   "devDependencies": {
     "@prisma/client": "^7.4.2",
     "@types/bcrypt": "^6.0.0",
+    "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.3.3",
     "prisma": "^7.4.2",
     "ts-node": "^10.9.2",
