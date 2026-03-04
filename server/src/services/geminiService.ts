@@ -78,8 +78,6 @@ interface DietPlanReq {
 class GeminiService {
   async generateAIPDietPlan({ weight, height, age, preferences, gender, planType, unitSystem }: DietPlanReq) {
     try {
-      const prefsString = preferences && preferences.length > 0 ? preferences.join(",") : "None";
-
       if (!weight || !height || !age || !gender || !planType || !unitSystem || !preferences) {
         throw new Error("All fields are required.");
       }
@@ -128,7 +126,7 @@ class GeminiService {
       - Gender: ${gender}
       - Weight: ${weight} ${unitSystem}
       - Height: ${height} ${unitSystem === 'METRIC' ? 'cm' : 'in'}
-      - Preferences/Allergies: ${prefsString}
+      - Preferences/Allergies: ${preferences}
       
       REQUIREMENTS:
       1. Provide exactly 5 meals: Breakfast, Morning Snack, Lunch, Afternoon Snack, Dinner.

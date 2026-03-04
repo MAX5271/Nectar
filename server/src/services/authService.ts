@@ -3,7 +3,11 @@ import { userRepository } from "../repository/userRepository.js";
 import { jwtHelper } from "../utils/jwtHelper.js";
 import type { SignUpData } from "./userService.js";
 
-interface LoginData extends Omit<SignUpData, "username"> {}
+// interface LoginData extends Omit<SignUpData, "username"> {}
+interface LoginData {
+  email: string;
+  password: string;
+}
 interface PayloadToken {
   id: string;
 }
@@ -14,7 +18,7 @@ class AuthService {
       const result = await authRepository.login(email.trim(), password);
       const accessToken = jwtHelper.accessTokenGenerator(result.id);
       const refreshToken = jwtHelper.refreshTokenGenerator(result.id);
-      await authRepository.updateRefreshToken(result.id,refreshToken);
+      await authRepository.updateRefreshToken(result.id, refreshToken);
       return {
         accessToken,
         refreshToken,
@@ -27,7 +31,7 @@ class AuthService {
     }
   }
 
-  async refreshToken(token: string,) {
+  async refreshToken(token: string) {
     try {
       const decode = jwtHelper.refreshVerifier(token) as PayloadToken;
 
@@ -38,11 +42,21 @@ class AuthService {
         throw new Error("Invalid refresh Token");
       }
 
-      return { username: user.username, accessToken: jwtHelper.accessTokenGenerator(user.id) };
-
+      return {
+        username: user.username,
+        accessToken: jwtHelper.accessTokenGenerator(user.id),
+      };
     } catch (error) {
       console.log("Error in authService layer ", error);
       throw new Error("Error in authService layer");
+    }
+  }
+  async logout(userId: string) {
+    try {
+      await authRepository.logout(userId);
+    } catch (e) {
+      console.log("Error in authService layer ", e);
+      throw new Error("Error logging out the user.");
     }
   }
 }

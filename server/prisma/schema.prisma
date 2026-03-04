@@ -38,7 +38,7 @@ model DietaryConstraint {
   height      Float // Use Float for decimals (e.g., 175.5 cm)
   weight      Float
   age         Int
-  preferences String[] // An array of strings for things like "Vegan", "No Nuts"
+  preferences String // A string for things like "Vegan", "No Nuts"
 
   // Link back to the User
   userId String

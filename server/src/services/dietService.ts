@@ -1,5 +1,4 @@
 import { dietRepository } from "../repository/dietRepository.js";
-import { userRepository } from "../repository/userRepository.js";
 import { dietHelper } from "../utils/dietHelper.js";
 import { geminiService } from "./geminiService.js";
 import { Gender, PlanType, UnitSystem } from "@prisma/client";
@@ -42,6 +41,17 @@ class DietService {
     const response = await dietRepository.dietPlan(userId);
     return response;
   }
+
+  async getLatestDietPlan(userId: string) {
+    const plan = await dietRepository.getLatestDietPlan(userId);
+    return plan || null;
+  }
+
+  async getDietPlanHistory(userId: string) {
+    const plan = await dietRepository.getDietPlanHistory(userId);
+    return plan || null;
+  }
+
 }
 
 export const dietService = new DietService();

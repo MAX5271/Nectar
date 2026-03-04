@@ -4,26 +4,46 @@ import type { Request, Response } from "express";
 class UserController {
   async signUp(req: Request, res: Response): Promise<void> {
     try {
-      const { email, username, password } = req.body;
-      const result = await userService.signUp({ email, username, password });
-      if(!result) {
-        res.status(401).json({
-          success: false,
-          data: {},
-          message: "User already exists"
-        });
-      }
-      res.status(200).json({
+      const { 
+        email, username, password, height, weight, 
+        age, gender, planType, unitSystem, preferences 
+      } = req.body;
+
+      const result = await userService.signUp({ 
+        email, username, password, height, weight, 
+        age, gender, planType, unitSystem, preferences 
+      });
+
+      res.status(201).json({
+        success: true,
         message: "User created successfully",
-        response: {
+        data: {
+          id: result.id,
           username: result.username,
-          email:result.email,
-          id:result.id
+          email: result.email
         },
       });
+    } catch (error: any) {
+      const status = error.message === "Email already in use." ? 409 : 400;
+      res.status(status).json({
+        success: false,
+        message: error.message || "An unexpected error occurred",
+      });
+    }
+  }
+
+  async getUserProfile(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.id as string;
+      const result = await userService.getUserProfile(userId);
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
     } catch (error) {
-      res.status(402).json({
-        message: error,
+      res.status(404).json({
+        success: false,
+        message: error instanceof Error ? error.message : "User not found",
       });
     }
   }

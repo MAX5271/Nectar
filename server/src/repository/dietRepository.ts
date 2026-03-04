@@ -9,6 +9,24 @@ class DietRepository {
     });
     return newPlanWithMeal;
   }
+
+async getLatestDietPlan(userId: string) {
+  return await prisma.dietPlan.findFirst({
+    where: { userId },
+    orderBy: { date: 'desc' },
+    include: { diets: true }
+  });
+}
+
+async getDietPlanHistory(userId: string) {
+  return await prisma.dietPlan.findMany({
+    where: { userId },
+    orderBy: { date: 'desc' },
+    take: 7,
+    include: { diets: true }
+  });
+}
+
 }
 
 export const dietRepository = new DietRepository();
