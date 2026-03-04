@@ -35,21 +35,52 @@ model DietaryConstraint {
   planType    PlanType
   gender      Gender
   unitSystem  UnitSystem
-  height      Float      // Use Float for decimals (e.g., 175.5 cm)
+  height      Float // Use Float for decimals (e.g., 175.5 cm)
   weight      Float
   age         Int
-  preferences String[]   // An array of strings for things like "Vegan", "No Nuts"
+  preferences String[] // An array of strings for things like "Vegan", "No Nuts"
 
   // Link back to the User
-  userId      String
-  user        User       @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Diet {
+  id       String   @id @default(uuid())
+  type     String
+  portion  String
+  meal     String
+  calories Float
+  carb     Float
+  protein  Float
+  fat      Float
+  date     DateTime
+
+  //Link back to DietPlan
+  dietPlanId String
+  dietPlan   DietPlan @relation(fields: [dietPlanId], references: [id])
+}
+
+model DietPlan {
+  id            String   @id @default(uuid())
+  date          DateTime
+  diets         Diet[]
+  totalCalories Float
+  totalProtein  Float
+  totalFat      Float
+  totalCarbs    Float
+
+  //Link back to the User
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 model User {
-id            String              @id @default(uuid())
-email         String              @unique
-username      String?
-password      String
-refreshToken  String?
-constraints DietaryConstraint[]
+  id           String              @id @default(uuid())
+  email        String              @unique
+  username     String?
+  password     String
+  refreshToken String?
+  constraints  DietaryConstraint[]
+  dietPlan     DietPlan[]
 }
