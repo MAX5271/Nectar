@@ -7,6 +7,6 @@ const router = Router();
 
 router.post('/login',authController.login);
 router.get('/refresh',verifyJWT.verifyJWT,authController.refresh);
-router.post('/logout',authController.logout);
+router.get('/logout',verifyJWT.verifyJWT,authController.logout);
 
 export default router;
