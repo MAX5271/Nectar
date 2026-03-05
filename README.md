@@ -17,6 +17,7 @@ NECTAR is a personalized, AI-driven diet planner application. This repository ho
 * **O/C Principle Adherence:** Extensible dictionary objects for BMR calculations and Goal Modifiers (Cutting, Bulking, Recomp), completely avoiding brittle `if/else` chains.
 * **AI Chef Integration:** A highly structured prompting system that commands the Gemini AI model to generate strictly formatted JSON diet plans containing precise macro (Protein, Carbs, Fats) and calorie targets.
 * **Type Safety:** Strict TypeScript interfaces (e.g., `DietPlanReq`) ensuring predictable data flow from the database to the AI service.
+* **Jwt Authentication:** Secure user authentication with JWTs, including refresh token management for seamless user sessions.
 
 ## 🛠️ Local Setup
 
@@ -33,6 +34,8 @@ Create a `.env` file in the root of the `server` directory:
 ```env
 DATABASE_URL="your_supabase_postgresql_connection_string"
 GEMINI_API_KEY="your_google_ai_studio_api_key"
+REFRESH_TOKEN_SECRET="your_secure_random_string_for_jwt_refresh_tokens"
+ACCESS_TOKEN_SECRET="your_secure_random_string_for_jwt_access_tokens"
 
 ```
 
