@@ -5,7 +5,7 @@ import { UnitSystem, Gender, PlanType } from "@prisma/client";
 export interface UserRegistrationInput {
   email: string;
   username: string;
-  password: string;
+  password: string;authProvider: 'local' | 'google';
   height: number;
   weight: number;
   age: number;
@@ -17,7 +17,7 @@ export interface UserRegistrationInput {
 
 class UserRepository {
   async createUserWithConstraints(data: UserRegistrationInput) {
-    const { email, username, password, ...constraints } = data;
+    const { email, username, password, authProvider, ...constraints } = data;
 
     const normalizedEmail = email.toLowerCase().trim();
     const duplicateUser = await prisma.user.findUnique({
@@ -26,7 +26,10 @@ class UserRepository {
 
     if (duplicateUser) throw new Error("Email already in use.");
 
-    const encryptedPassword = bcrypt.hashSync(password, 10);
+    let finalPassword = null;
+    if (authProvider === 'local' && password) {
+      finalPassword = await bcrypt.hash(password, 10);
+    }
 
     const genderMap: Record<string, Gender> = {
       male: Gender.MALE,
@@ -46,19 +49,16 @@ class UserRepository {
       data: {
         email: normalizedEmail,
         username,
-        password: encryptedPassword,
+        password: finalPassword,
         constraints: {
           create: {
-            height: constraints.height,
-            weight: constraints.weight,
-            age: constraints.age,
+            height: Number(constraints.height),
+            weight: Number(constraints.weight),
+            age: Number(constraints.age),
             preferences: constraints.preferences,
             gender: genderMap[constraints.gender.toLowerCase()] || Gender.MALE,
-            planType:
-              planMap[constraints.planType.toLowerCase()] || PlanType.RECOMP,
-            unitSystem:
-              unitMap[constraints.unitSystem.toLowerCase()] ||
-              UnitSystem.METRIC,
+            planType: planMap[constraints.planType.toLowerCase()] || PlanType.RECOMP,
+            unitSystem: unitMap[constraints.unitSystem.toLowerCase()] || UnitSystem.METRIC,
           },
         },
       },

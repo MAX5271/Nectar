@@ -5,12 +5,12 @@ class UserController {
   async signUp(req: Request, res: Response): Promise<void> {
     try {
       const { 
-        email, username, password, height, weight, 
+        email, username, password, authProvider, height, weight, 
         age, gender, planType, unitSystem, preferences 
       } = req.body;
 
       const result = await userService.signUp({ 
-        email, username, password, height, weight, 
+        email, username, password, authProvider, height, weight, 
         age, gender, planType, unitSystem, preferences 
       });
 

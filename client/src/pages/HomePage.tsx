@@ -1,6 +1,10 @@
 import React from 'react';
+import { useSmartNavigate } from '../hooks/useSmartNavigate';
 
 const Home: React.FC = () => {
+
+  const navigate = useSmartNavigate();
+
   return (
     <main className="min-h-screen bg-white">
       <section className="relative overflow-hidden px-6 pt-16 pb-24 text-center lg:px-8 lg:pt-32">
@@ -17,10 +21,10 @@ const Home: React.FC = () => {
             Nectar takes the guesswork out of your diet. Track your macros, manage your caloric deficit, and reach your goal weight with smart, adaptable meal plans.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
-            <button className="rounded-full bg-zinc-900 px-8 py-4 text-base font-bold text-white shadow-xl transition-all hover:bg-zinc-800 active:scale-95">
+            <button onClick={()=>navigate('/login')} className="rounded-full bg-zinc-900 px-8 py-4 text-base font-bold text-white shadow-xl transition-all hover:bg-zinc-800 active:scale-95">
               Start Your Journey
             </button>
-            <button className="text-base font-semibold leading-6 text-zinc-900 transition-colors hover:text-amber-600">
+            <button onClick={()=>navigate('/about')} className="text-base font-semibold leading-6 text-zinc-900 transition-colors hover:text-amber-600">
               See How It Works <span aria-hidden="true">→</span>
             </button>
           </div>

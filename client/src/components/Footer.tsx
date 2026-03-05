@@ -1,6 +1,7 @@
 import React from 'react';
 
 const Footer: React.FC = () => {
+
   return (
     <footer className="w-full border-t border-zinc-200 bg-white py-12">
       <div className="mx-auto max-w-7xl px-6">

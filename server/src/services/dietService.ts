@@ -37,6 +37,11 @@ class DietService {
     return dietResponse;
   }
 
+  async getDietPlanById(planId: string) {
+    const result = await dietRepository.getDietPlanById(planId);
+    return result || null;
+  }
+
   async dietResponse(userId: string) {
     const response = await dietRepository.dietPlan(userId);
     return response;

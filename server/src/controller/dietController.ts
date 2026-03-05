@@ -25,6 +25,18 @@ class DietController {
     }
   }
 
+  async getDietPlanById(req: Request, res: Response): Promise<void> {
+    try {
+      const dietPlanId = req.params.id;
+      const result = await dietService.getDietPlanById(dietPlanId as string);
+      res.status(200).json({
+        result: result,
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   async getDietPlanHistory(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.id;

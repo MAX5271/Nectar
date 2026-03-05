@@ -18,6 +18,13 @@ async getLatestDietPlan(userId: string) {
   });
 }
 
+async getDietPlanById(planId: string) {
+  return await prisma.dietPlan.findUnique({
+    where: { id: planId },
+    include: { diets: true }
+  });
+}
+
 async getDietPlanHistory(userId: string) {
   return await prisma.dietPlan.findMany({
     where: { userId },

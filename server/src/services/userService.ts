@@ -9,29 +9,16 @@ class UserService {
   async signUp(data: SignUpData) {
     try {
       const {
-        email,
-        username,
-        password,
-        height,
-        weight,
-        age,
-        gender,
-        planType,
-        unitSystem,
+        email, username, password, authProvider, height,
+        weight, age, gender, planType, unitSystem,
       } = data;
 
-      if (
-        !email ||
-        !username ||
-        !password ||
-        !height ||
-        !weight ||
-        !age ||
-        !gender ||
-        !planType ||
-        !unitSystem
-      ) {
-        throw new Error("All fields are required.");
+      if (!email || !username || !height || !weight || !age || !gender || !planType || !unitSystem) {
+        throw new Error("Core identification and biometric fields are required.");
+      }
+
+      if (authProvider === 'local' && !password) {
+        throw new Error("Password is required for local authentication protocols.");
       }
 
       const result = await userRepository.createUserWithConstraints(data);

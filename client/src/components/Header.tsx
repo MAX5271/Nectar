@@ -1,17 +1,10 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useSmartNavigate } from '../hooks/useSmartNavigate';
 
 const Header: React.FC = () => {
 
-  const navigate = useNavigate();
+  const navigate = useSmartNavigate();
 
-  const handleLogin = ()=>{
-    navigate('/login');
-  }
-
-  const handleTitle = ()=>{
-    navigate('/');
-  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b-4 border-red-600 bg-black">
@@ -21,7 +14,7 @@ const Header: React.FC = () => {
           <div className="flex h-12 w-12 items-center justify-center bg-red-600 text-2xl font-black text-black shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">
             N/
           </div>
-          <span onClick={handleTitle} className="text-3xl font-black uppercase tracking-widest text-white">
+          <span onClick={()=>navigate('/')} className="text-3xl font-black uppercase tracking-widest text-white">
             Nectar
           </span>
         </div>
@@ -43,11 +36,11 @@ const Header: React.FC = () => {
         </nav>
 
         <div className="flex items-center gap-8">
-          <button onClick={handleLogin} className="hidden text-sm font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:text-white sm:block">
+          <button onClick={()=>navigate('/login')} className="hidden text-sm font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:text-white sm:block">
             Log in
           </button>
           
-          <button className="hidden transform bg-red-600 px-8 py-3 text-sm font-black uppercase tracking-widest text-black transition-all hover:-translate-y-1 hover:bg-red-500 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-0 active:shadow-none md:block">
+          <button onClick={()=>navigate('/about')} className="hidden transform bg-red-600 px-8 py-3 text-sm font-black uppercase tracking-widest text-black transition-all hover:-translate-y-1 hover:bg-red-500 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-0 active:shadow-none md:block">
             Initialize
           </button>
           

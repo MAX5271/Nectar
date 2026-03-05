@@ -1,6 +1,10 @@
 import React from 'react';
+import { useSmartNavigate } from '../hooks/useSmartNavigate';
 
 const Login: React.FC = () => {
+
+    const navigate = useSmartNavigate();
+
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-zinc-950 p-6 font-sans text-white">
       <div className="w-full max-w-md border-4 border-red-600 bg-black p-8 shadow-[8px_8px_0px_0px_rgba(255,255,255,0.1)] transition-shadow hover:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.2)] sm:p-12">
@@ -53,7 +57,7 @@ const Login: React.FC = () => {
             </button>
             
             <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-500">
-              No Profile Found? <a href="#" className="text-red-600 transition-colors hover:text-white">Initialize Here</a>
+              No Profile Found? <a onClick={()=>navigate('/register')} className="text-red-600 transition-colors hover:text-white">Initialize Here</a>
             </p>
           </div>
         </form>
