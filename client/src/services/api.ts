@@ -11,11 +11,9 @@ export const injectStore = (_store: Store) => {
 };
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', 
-  
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api', 
   withCredentials: true, 
 });
-
 // before ANY request leaves the browser, this runs.
 api.interceptors.request.use((config) => {
   const token = store?.getState().auth.token;

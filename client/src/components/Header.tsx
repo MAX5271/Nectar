@@ -5,7 +5,6 @@ import { useAppSelector } from '../hooks/reduxHooks';
 const Header: React.FC = () => {
 
   const isAuthenticated  = useAppSelector(state => state.auth.isAuthenticated);
-  console.log(isAuthenticated);
   const username = useAppSelector(state => state.auth.user?.username);
 
   const navigate = useSmartNavigate();

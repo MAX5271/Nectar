@@ -6,7 +6,6 @@ import Error404 from "./pages/ui/Error404";
 import Login from "./pages/auth/LoginPage";
 import About from "./pages/ui/About";
 import Register from "./pages/auth/Register";
-import { useAppSelector } from "./hooks/reduxHooks";
 import Dashboard from "./pages/ui/Dashboard";
 import DietPlanHistory from "./pages/ui/DietPlanHistory";
 
@@ -46,8 +45,6 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  const isAuthenticated  = useAppSelector(state => state.auth.isAuthenticated);
-  console.log(isAuthenticated);
   return (
     <RouterProvider router={router}/>
   )

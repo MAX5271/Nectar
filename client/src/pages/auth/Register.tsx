@@ -64,7 +64,7 @@ const Register: React.FC = () => {
       return;
     }
     setIsSubmitting(true);
-    console.log('[SYSTEM] Executing payload sequence:', payload);
+    // console.log('[SYSTEM] Executing payload sequence:', payload);
     
     try {
       const response = await api.post('/user/signup', payload);

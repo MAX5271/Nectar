@@ -11,7 +11,7 @@ export const useSmartNavigate = () => {
     }
 
     if (location.pathname === targetPath) {
-      console.log(`[SYSTEM] Already at sector: ${targetPath}. Navigation aborted.`);
+      console.log(`[SYSTEM] Already at sector: ${targetPath}.`);
       return;
     }
 

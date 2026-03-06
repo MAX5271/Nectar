@@ -1,6 +1,10 @@
 import React from 'react';
+import { useSmartNavigate } from '../../hooks/useSmartNavigate';
 
 const About: React.FC = () => {
+
+  const navigate = useSmartNavigate();
+
   return (
     <div className="flex min-h-screen w-full flex-col items-center bg-zinc-950 p-6 font-sans text-white md:p-12">
       <div className="w-full max-w-5xl">
@@ -81,7 +85,7 @@ const About: React.FC = () => {
           <h2 className="mb-6 text-2xl font-black uppercase tracking-widest text-black md:text-4xl">
             [ END OF READOUT ] - Ready to Initialize?
           </h2>
-          <button className="transform bg-black px-10 py-5 text-sm font-black uppercase tracking-widest text-white shadow-[8px_8px_0px_0px_rgba(255,255,255,0.2)] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.4)] active:translate-y-0 active:shadow-none">
+          <button onClick={()=>navigate('/dashboard')} className="transform bg-black px-10 py-5 text-sm font-black uppercase tracking-widest text-white shadow-[8px_8px_0px_0px_rgba(255,255,255,0.2)] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.4)] active:translate-y-0 active:shadow-none">
             Access Dashboard
           </button>
         </div>

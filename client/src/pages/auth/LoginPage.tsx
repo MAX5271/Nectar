@@ -42,7 +42,7 @@ const Login: React.FC = () => {
           token: accessToken
         }));
 
-        console.log('[SYSTEM] Authorization successful. Access granted.');
+        console.log('[SYSTEM] Authorization successful.');
         navigate('/dashboard');
       }
     } catch (error) {
