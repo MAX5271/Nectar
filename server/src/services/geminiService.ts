@@ -1,66 +1,11 @@
-import {GoogleGenerativeAI} from "@google/generative-ai";
-import { Gender,PlanType,UnitSystem } from "@prisma/client";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Gender, PlanType, UnitSystem } from "@prisma/client";
 
-
-// const tempResponse = {
-//   targetCalories: 1840,
-//   totalProtein: 144,
-//   totalCarbs: 129,
-//   totalFats: 80,
-//   meals: [
-//     {
-//       mealType: 'Breakfast',
-//       foodName: 'Scrambled Eggs with Whole-Wheat Toast and Avocado',
-//       portion: '3 large scrambled eggs, 1 slice whole-wheat toast, 1/4 medium avocado',
-//       calories: 400,
-//       protein: 23,
-//       carbs: 21,
-//       fat: 26
-//     },
-//     {
-//       mealType: 'Morning Snack',
-//       foodName: 'Apple with Peanut Butter',
-//       portion: '1 medium apple, 1 tbsp natural peanut butter',
-//       calories: 190,
-//       protein: 4,
-//       carbs: 28,
-//       fat: 8
-//     },
-//     {
-//       mealType: 'Lunch',
-//       foodName: 'Large Chicken and Quinoa Salad',
-//       portion: '150g grilled chicken breast, 1 cup mixed greens, 1/2 cup assorted chopped vegetables, 1/2 cup cooked quinoa, 3 tbsp light vinaigrette',
-//       calories: 490,
-//       protein: 52,
-//       carbs: 36,
-//       fat: 14
-//     },
-//     {
-//       mealType: 'Afternoon Snack',
-//       foodName: 'Low-Fat Cottage Cheese with Cucumber',
-//       portion: '1 cup low-fat cottage cheese, 1/2 medium cucumber (sliced)',
-//       calories: 170,
-//       protein: 28,
-//       carbs: 8,
-//       fat: 2
-//     },
-//     {
-//       mealType: 'Dinner',
-//       foodName: 'Baked Salmon with Roasted Sweet Potato and Asparagus',
-//       portion: '140g baked salmon fillet, 1 medium roasted sweet potato, 1 cup roasted asparagus, 1 tbsp olive oil',
-//       calories: 570,
-//       protein: 37,
-//       carbs: 36,
-//       fat: 30
-//     }
-//   ]
-// };
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY||"");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 const model = genAI.getGenerativeModel({ 
-  model: "gemini-2.5-flash",
+  model: "gemini-2.5-flash", 
   generationConfig: {
-    temperature: 0.85,
+    temperature: 0.3,
     responseMimeType: "application/json",
   }
 });
@@ -69,8 +14,8 @@ interface DietPlanReq {
   weight: number;
   height: number;
   age: number;
-  preferences: string[];
-  gender: Gender
+  preferences: string;
+  gender: Gender;
   planType: PlanType; 
   unitSystem: UnitSystem; 
 }
@@ -82,16 +27,16 @@ class GeminiService {
         throw new Error("All fields are required.");
       }
 
-      // Mifflin-St Jeor equation
-      const BMR= {
-        MALE: {
-          METRIC: 10 * weight + 6.25 * height - 5 * age + 5,
-          IMPERIAL: 4.536 * weight + 15.875 * height - 5 * age + 5
-        },
-        FEMALE: {
-          METRIC: 10 * weight + 6.25 * height - 5 * age - 161,
-          IMPERIAL: 4.536 * weight + 15.875 * height - 5 * age - 161
-        }
+      // Calculation logic based on Mifflin-St Jeor
+      const isMetric = unitSystem === 'METRIC';
+      
+      const BMR_CALC = {
+        MALE: isMetric 
+          ? (10 * weight + 6.25 * height - 5 * age + 5)
+          : (4.536 * weight + 15.875 * height - 5 * age + 5),
+        FEMALE: isMetric
+          ? (10 * weight + 6.25 * height - 5 * age - 161)
+          : (4.536 * weight + 15.875 * height - 5 * age - 161)
       };
 
       const GOAL_MODIFIER = {
@@ -100,11 +45,9 @@ class GeminiService {
         RECOMP: 0
       };
 
-      const baseBMR = BMR[gender][unitSystem];
+      const baseBMR = BMR_CALC[gender];
       const activityMultiplier = 1.2;
-      const planAdjustments = GOAL_MODIFIER[planType];
-
-      const targetCalories = Math.round(baseBMR * activityMultiplier + planAdjustments);
+      const targetCalories = Math.round(baseBMR * activityMultiplier + GOAL_MODIFIER[planType]);
 
       const creativeConstraints = [
         "Focus on high-volume, low-calorie-dense foods that keep you full.",
@@ -119,49 +62,44 @@ class GeminiService {
 
       const prompt = `
       You are an expert nutritionist AI for the app NECTAR.
-      Generate a 1-day personalized diet plan for today.
+      Generate a 1-day personalized diet plan.
       
-      USER PROFILE:
-      - Goal: ${targetCalories} calories
-      - Gender: ${gender}
-      - Weight: ${weight} ${unitSystem}
-      - Height: ${height} ${unitSystem === 'METRIC' ? 'cm' : 'in'}
+      USER STATS:
+      - Target: ${targetCalories} calories
       - Preferences/Allergies: ${preferences}
       
-      REQUIREMENTS:
-      1. Provide exactly 5 meals: Breakfast, Morning Snack, Lunch, Afternoon Snack, Dinner.
-      2. TODAY'S CREATIVE CONSTRAINT: ${dailyConstraint}
+      CRITICAL INSTRUCTIONS:
+      1. If the preferences mention 'Vegan', you MUST NOT include any animal products (No meat, dairy, eggs, honey, or fish).
+      2. Strictly adhere to all dietary restrictions found in the preferences: "${preferences}".
+      3. TODAY'S STYLE CONSTRAINT: ${dailyConstraint}
+      4. Provide exactly 5 meals.
       
-      EXPECTED JSON SCHEMA:
+      JSON OUTPUT FORMAT:
       {
-        "targetCalories": 2500,
-        "totalProtein": 120,
-        "totalCarbs": 150,
-        "totalFats": 80,
+        "targetCalories": ${targetCalories},
+        "totalProtein": number,
+        "totalCarbs": number,
+        "totalFats": number,
         "meals": [
           {
             "mealType": "Breakfast",
-            "foodName": "Oatmeal with Berries",
-            "portion": "1 cup",
-            "calories": 350,
-            "protein": 15,
-            "carbs": 20,
-            "fat": 20
+            "foodName": "string",
+            "portion": "string",
+            "calories": number,
+            "protein": number,
+            "carbs": number,
+            "fat": number
           }
         ]
       }
       `;
 
       const result = await model.generateContent(prompt);
-      if (!result) throw new Error("Error while getting response from Gemini AI.");
-      
-      const response = result.response;
-      
-      const jsonResponse = JSON.parse(response.text());
+      const responseText = result.response.text();
+      return JSON.parse(responseText);
 
-      return jsonResponse;
     } catch (e) {
-      console.log("Error in geminiService layer ", e);
+      console.error("Error in geminiService layer:", e);
       throw e; 
     }
   }
