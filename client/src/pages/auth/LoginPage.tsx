@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { useSmartNavigate } from '../../hooks/useSmartNavigate';
 import api from '../../services/api';
-import { useAppDispatch } from '../../hooks/reduxHooks';
+import { useAppDispatch, useAppSelector } from '../../hooks/reduxHooks';
 import { setCredentials } from '../../store/slices/authSlice';
 import axios from 'axios';
 
 const Login: React.FC = () => {
   const navigate = useSmartNavigate();
   const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
 
+  if(isAuthenticated){
+    navigate('/dashboard');
+  }
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -60,36 +64,37 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-zinc-950 p-6 font-sans text-white">
-      <div className="w-full max-w-md border-4 border-red-600 bg-black p-8 shadow-[8px_8px_0px_0px_rgba(255,255,255,0.1)] transition-shadow hover:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.2)] sm:p-12">
+    <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-zinc-950 p-4 font-sans text-white sm:p-6">
+      <div className="w-full max-w-md border-4 border-red-600 bg-black p-6 shadow-[8px_8px_0px_0px_rgba(255,255,255,0.1)] transition-shadow hover:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.2)] sm:p-12">
         
         <div className="mb-8 flex items-center gap-4 border-b-4 border-zinc-800 pb-6">
-          <div className="flex h-12 w-12 items-center justify-center bg-red-600 text-2xl font-black text-black shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-red-600 text-2xl font-black text-black shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">
             N/
           </div>
-          <h1 className="text-3xl font-black uppercase tracking-widest text-white">
+          <h1 className="text-2xl font-black uppercase tracking-widest text-white sm:text-3xl">
             Authorization
           </h1>
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+            <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-zinc-500">
               Identification
             </label>
             <input 
+              id="email"
               type="email" 
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-white placeholder-zinc-700 outline-none transition-colors focus:border-red-600"
+              className="w-full border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-white placeholder-zinc-700 outline-none transition-colors focus:border-red-600"
               placeholder="USER@SYSTEM.NET"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-zinc-500">
                 Security Key
               </label>
               <div className="flex gap-4">
@@ -100,17 +105,22 @@ const Login: React.FC = () => {
                 >
                   [{showPassword ? 'Hide' : 'Show'}]
                 </button>
-                <a onClick={handleReset} className="text-[10px] font-bold uppercase tracking-widest text-red-600 transition-colors hover:text-white cursor-pointer">
+                <button 
+                  type="button"
+                  onClick={handleReset} 
+                  className="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-red-600 transition-colors hover:text-white focus:outline-none"
+                >
                   Reset
-                </a>
+                </button>
               </div>
             </div>
             <input 
+              id="password"
               type={showPassword ? "text" : "password"} 
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-white placeholder-zinc-700 outline-none transition-colors focus:border-red-600"
+              className="w-full border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-white placeholder-zinc-700 outline-none transition-colors focus:border-red-600"
               placeholder="••••••••"
             />
           </div>
@@ -119,13 +129,13 @@ const Login: React.FC = () => {
             <button 
               type="submit"
               disabled={isLoading}
-              className={`w-full transform bg-red-600 px-8 py-4 text-sm font-black uppercase tracking-widest text-black transition-all hover:-translate-y-1 hover:bg-red-500 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-0 active:shadow-none ${isLoading ? 'opacity-50 cursor-not-allowed hover:translate-y-0 hover:shadow-none' : ''}`}
+              className={`w-full transform bg-red-600 px-8 py-4 text-sm font-black uppercase tracking-widest text-black transition-all hover:-translate-y-1 hover:bg-red-500 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-0 active:shadow-none ${isLoading ? 'cursor-not-allowed opacity-50 hover:translate-y-0 hover:shadow-none' : ''}`}
             >
               {isLoading ? "Verifying..." : "Access System"}
             </button>
             
             <p className="text-center text-xs font-bold uppercase tracking-widest text-zinc-500">
-              No Profile Found? <button type="button" onClick={() => navigate('/register')} className="text-red-600 transition-colors hover:text-white">Initialize Here</button>
+              No Profile Found? <button type="button" onClick={() => navigate('/register')} className="text-red-600 transition-colors hover:text-white focus:outline-none">Initialize Here</button>
             </p>
           </div>
         </form>
