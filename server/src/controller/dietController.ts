@@ -1,12 +1,13 @@
 import { dietService } from "../services/dietService.js";
 import type { Response, Request } from "express";
+import StatusCode from "../utils/statusCodes.js";
 
 class DietController {
   async dietPlan(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.id;
       const result = await dietService.dietResponse(userId as string);
-      res.status(200).json({
+      res.status(StatusCode.SUCCESS).json({
         result: result,
       });
     } catch (e) {
@@ -17,10 +18,14 @@ class DietController {
     try {
       const userId = req.id;
       const result = await dietService.getLatestDietPlan(userId as string);
-      res.status(200).json({
+      res.status(StatusCode.SUCCESS).json({
         result: result,
       });
     } catch (error) {
+      res.status(StatusCode.INTERNAL_SERVER_ERROR).json({
+        message: "Internal server error",
+        response: {},
+      });
       console.log(error);
     }
   }
@@ -29,10 +34,14 @@ class DietController {
     try {
       const dietPlanId = req.params.id;
       const result = await dietService.getDietPlanById(dietPlanId as string);
-      res.status(200).json({
+      res.status(StatusCode.SUCCESS).json({
         result: result,
       });
     } catch (error) {
+      res.status(StatusCode.INTERNAL_SERVER_ERROR).json({
+        message: "Internal server error",
+        response: {},
+      });
       console.log(error);
     }
   }
@@ -41,10 +50,14 @@ class DietController {
     try {
       const userId = req.id;
       const result = await dietService.getDietPlanHistory(userId as string);
-      res.status(200).json({
+      res.status(StatusCode.SUCCESS).json({
         result: result,
       });
     } catch (error) {
+      res.status(StatusCode.INTERNAL_SERVER_ERROR).json({
+        message: "Internal server error",
+        response: {},
+      });
       console.log(error);
     }
   }

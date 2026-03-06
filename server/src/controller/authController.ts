@@ -1,5 +1,6 @@
 import { authService } from "../services/authService.js";
 import type { Request, Response } from "express";
+import StatusCode from "../utils/statusCodes.js";
 
 class AuthController {
   async login(req: Request, res: Response): Promise<void> {
@@ -9,7 +10,7 @@ class AuthController {
         const { accessToken, refreshToken, username, id } =
           await authService.login({ email, password });
         if (!id) {
-          res.status(403).json({
+          res.status(StatusCode.UNAUTHORIZED).json({
             message: "Invalid email or password.",
             response: {},
           });
@@ -32,7 +33,7 @@ class AuthController {
         },
         });
       } catch (error) {
-        res.status(404).json({
+        res.status(StatusCode.INTERNAL_SERVER_ERROR).json({
           message: "Internal server error",
           response: {},
         });
@@ -44,7 +45,7 @@ class AuthController {
     try {
       const cookie = req.cookies;
       if (!cookie?.jwt) {
-        res.status(403).json({
+        res.status(StatusCode.FORBIDDEN).json({
           message: "Refresh Token not found",
           response: {},
         });
@@ -54,7 +55,7 @@ class AuthController {
       const result = await authService.refreshToken(cookie.jwt);
       res.json(result);
     } catch (error) {
-      res.status(404).json({
+      res.status(StatusCode.INTERNAL_SERVER_ERROR).json({
         message: "Internal server error",
         response: {},
       });
@@ -69,12 +70,12 @@ class AuthController {
         sameSite: "strict",
         secure: true,
       });
-      res.status(200).json({
+      res.status(StatusCode.SUCCESS).json({
         message: "User successfully logged out",
         response: {},
       });
     } catch (error) {
-      res.status(404).json({
+      res.status(StatusCode.INTERNAL_SERVER_ERROR).json({
         message: "Internal server error",
         response: {},
       });

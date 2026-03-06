@@ -1,6 +1,7 @@
 import { access } from "node:fs";
 import { userService } from "../services/userService.js";
 import type { Request, Response } from "express";
+import StatusCode from "../utils/statusCodes.js";
 
 class UserController {
   async signUp(req: Request, res: Response): Promise<void> {
@@ -22,7 +23,7 @@ class UserController {
           secure: true,
         });
 
-      res.status(201).json({
+      res.status(StatusCode.CREATED).json({
         success: true,
         message: "User created successfully",
         data: {
@@ -33,7 +34,7 @@ class UserController {
         },
       });
     } catch (error: any) {
-      const status = error.message === "Email already in use." ? 409 : 400;
+      const status = error.message === "Email already in use." ? StatusCode.CONFLICT : StatusCode.BAD_REQUEST;
       res.status(status).json({
         success: false,
         message: error.message || "An unexpected error occurred",
@@ -45,12 +46,12 @@ class UserController {
     try {
       const userId = req.id as string;
       const result = await userService.getUserProfile(userId);
-      res.status(200).json({
+      res.status(StatusCode.SUCCESS).json({
         success: true,
         data: result,
       });
     } catch (error) {
-      res.status(404).json({
+      res.status(StatusCode.NOT_FOUND).json({
         success: false,
         message: error instanceof Error ? error.message : "User not found",
       });
