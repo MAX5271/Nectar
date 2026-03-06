@@ -6,9 +6,10 @@ interface StepProps {
   updatePayload: (data: Partial<NectarPayload>) => void;
   prevStep: () => void;
   submitToBackend: () => void;
+  isSubmitting: boolean;
 }
 
-const Step3Protocol: React.FC<StepProps> = ({ payload, updatePayload, prevStep, submitToBackend }) => {
+const Step3Protocol: React.FC<StepProps> = ({ payload, updatePayload, prevStep, submitToBackend, isSubmitting }) => {
   const handleFinalSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!payload.planType) return;
@@ -53,13 +54,13 @@ const Step3Protocol: React.FC<StepProps> = ({ payload, updatePayload, prevStep, 
 
       <div className="mt-8 border-t-2 border-zinc-800 pt-6">
         <p className="mb-4 text-xs font-bold uppercase tracking-widest text-zinc-400">
-          WARNING: Executing this protocol will lock in your initial baseline and trigger the AI generation matrix.
+          Note: Proceeding will finalize your stats and begin generating your AI Powered diet plan.
         </p>
         <div className="flex gap-4">
           <button type="button" onClick={prevStep} className="w-1/3 border-2 border-zinc-800 bg-black px-4 py-4 text-sm font-black uppercase tracking-widest text-zinc-500 transition-colors hover:border-white hover:text-white">
             Back
           </button>
-          <button type="submit" className="w-2/3 transform bg-white px-8 py-4 text-sm font-black uppercase tracking-widest text-black transition-all hover:-translate-y-1 hover:bg-zinc-200 hover:shadow-[4px_4px_0px_0px_rgba(220,38,38,1)] active:translate-y-0 active:shadow-none">
+          <button disabled={isSubmitting} type="submit" className="w-2/3 transform bg-white px-8 py-4 text-sm font-black uppercase tracking-widest text-black transition-all hover:-translate-y-1 hover:bg-zinc-200 hover:shadow-[4px_4px_0px_0px_rgba(220,38,38,1)] active:translate-y-0 active:shadow-none">
             Execute Initialization
           </button>
         </div>

@@ -1,11 +1,16 @@
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
-import Home from "./pages/HomePage"
-import AppLayout from "./pages/AppLayout";
-import Error404 from "./pages/Error404";
-import Login from "./pages/LoginPage";
-import About from "./pages/About";
-import Register from "./pages/Register";
+import Home from "./pages/ui/HomePage"
+import AppLayout from "./pages/ui/AppLayout";
+import Error404 from "./pages/ui/Error404";
+import Login from "./pages/auth/LoginPage";
+import About from "./pages/ui/About";
+import Register from "./pages/auth/Register";
+import { useAppSelector } from "./hooks/reduxHooks";
+import Dashboard from "./pages/ui/Dashboard";
+import DietPlanHistory from "./pages/ui/DietPlanHistory";
+
+
 
 const router = createBrowserRouter([
   {
@@ -27,12 +32,22 @@ const router = createBrowserRouter([
       {
         path:'/register',
         element: <Register/>
+      },
+      {
+        path:'/dashboard',
+        element: <Dashboard/>
+      },
+      {
+        path: 'diet-history',
+        element: <DietPlanHistory/>
       }
     ]
   }
 ]);
 
 function App() {
+  const isAuthenticated  = useAppSelector(state => state.auth.isAuthenticated);
+  console.log(isAuthenticated);
   return (
     <RouterProvider router={router}/>
   )

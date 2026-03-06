@@ -11,7 +11,7 @@ class AuthRepository {
     if (!user) {
       throw new Error("User not found.");
     }
-    if (!bcrypt.compareSync(password, user.password)) {
+    if (!bcrypt.compare(password, user.password!)) {
       throw new Error("Invalid Password");
     }
     return user;

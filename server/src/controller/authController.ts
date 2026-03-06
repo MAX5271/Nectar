@@ -22,13 +22,14 @@ class AuthController {
           secure: true,
         });
         res.status(200).json({
-          message: "User successfully logged-in",
-          response: {
-            accessToken,
-            username,
-            email,
-            id,
-          },
+        success: true,
+        message: "User logged in successfully",
+        data: {
+          id: id,
+          username: username,
+          email: email,
+          accessToken: accessToken,
+        },
         });
       } catch (error) {
         res.status(404).json({

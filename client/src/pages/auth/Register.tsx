@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { type NectarPayload } from '../types';
-import Step1Credentials from '../components/onboarding/Step1Credentials';
-import Step2Biometrics from '../components/onboarding/Step2Biometrics';
-import Step3Protocol from '../components/onboarding/Step3Protocol';
+import { type NectarPayload } from '../../types';
+import Step1Credentials from '../../components/onboarding/Step1Credentials';
+import Step2Biometrics from '../../components/onboarding/Step2Biometrics';
+import Step3Protocol from '../../components/onboarding/Step3Protocol';
+import { useSmartNavigate } from '../../hooks/useSmartNavigate';
+import api from '../../services/api';
+import { useAppDispatch } from '../../hooks/reduxHooks';
+import { setCredentials } from '../../store/slices/authSlice';
+import axios from 'axios';
 
 const emptyPayload: NectarPayload = {
   email: '', username: '', password: '', authProvider: 'local', 
@@ -15,6 +20,11 @@ const Register: React.FC = () => {
     const savedStep = sessionStorage.getItem('nectar_step');
     return savedStep ? parseInt(savedStep) : 1;
   });
+
+  const navigate = useSmartNavigate();
+
+  const dispatch = useAppDispatch();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   //optimization technique know as lazy initialization. Tied to the life cycle of a browser's tab and not permanent like local storage.
   const [payload, setPayload] = useState<NectarPayload>(() => {
@@ -53,16 +63,34 @@ const Register: React.FC = () => {
       setStep(1);
       return;
     }
-
+    setIsSubmitting(true);
     console.log('[SYSTEM] Executing payload sequence:', payload);
     
     try {
-      
+      const response = await api.post ('/user/signup', payload);
       sessionStorage.removeItem('nectar_step');
       sessionStorage.removeItem('nectar_payload');
-      alert("System initialized successfully.");
+      if (response.data.success && response.data.data.accessToken) {
+        
+        const { id, username, email, accessToken } = response.data.data;
+
+        // action for reducer
+        dispatch(setCredentials({
+          user: { id, username, email },
+          token: accessToken,
+        }));
+        navigate('/dashboard');
+      }
     } catch (error) {
-      console.error("Initialization failed:", error);
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.message || "Invalid credentials. Access denied.";
+        console.error("[SYSTEM] Authorization failed:", errorMessage);
+        alert(`Error: ${errorMessage}`);
+      } else {
+        alert("A critical system error occurred.");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -83,7 +111,7 @@ const Register: React.FC = () => {
         <div className="min-h-[350px]">
           {step === 1 && <Step1Credentials payload={payload} updatePayload={updatePayload} nextStep={nextStep} />}
           {step === 2 && <Step2Biometrics payload={payload} updatePayload={updatePayload} nextStep={nextStep} prevStep={prevStep} />}
-          {step === 3 && <Step3Protocol payload={payload} updatePayload={updatePayload} prevStep={prevStep} submitToBackend={submitToBackend} />}
+          {step === 3 && <Step3Protocol payload={payload} isSubmitting={isSubmitting} updatePayload={updatePayload} prevStep={prevStep} submitToBackend={submitToBackend} />}
         </div>
 
       </div>
@@ -94,6 +122,6 @@ const Register: React.FC = () => {
 export default Register;
 
 /**NOTE ON LAZY INITIALIZATION
- *  Lazy loading is passing the function in the useState hook.
- * If we directly pass data, every single key stroke forces re-render and reinitialization but lazy method make it only initialize once.
+ * lazy loading is passing the function in the useState hook.
+ * if we directly pass data, every single key stroke forces re-render and reinitialization but lazy method make it only initialize once.
  */

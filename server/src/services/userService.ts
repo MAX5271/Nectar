@@ -2,6 +2,7 @@ import {
   userRepository,
   type UserRegistrationInput,
 } from "../repository/userRepository.js";
+import { jwtHelper } from "../utils/jwtHelper.js";
 
 export interface SignUpData extends UserRegistrationInput {}
 
@@ -9,20 +10,43 @@ class UserService {
   async signUp(data: SignUpData) {
     try {
       const {
-        email, username, password, authProvider, height,
-        weight, age, gender, planType, unitSystem,
+        email,
+        username,
+        password,
+        authProvider,
+        height,
+        weight,
+        age,
+        gender,
+        planType,
+        unitSystem,
       } = data;
 
-      if (!email || !username || !height || !weight || !age || !gender || !planType || !unitSystem) {
-        throw new Error("Core identification and biometric fields are required.");
+      if (
+        !email ||
+        !username ||
+        !height ||
+        !weight ||
+        !age ||
+        !gender ||
+        !planType ||
+        !unitSystem
+      ) {
+        throw new Error(
+          "Core identification and biometric fields are required.",
+        );
       }
 
-      if (authProvider === 'local' && !password) {
-        throw new Error("Password is required for local authentication protocols.");
+      if (authProvider === "local" && !password) {
+        throw new Error(
+          "Password is required for local authentication protocols.",
+        );
       }
 
       const result = await userRepository.createUserWithConstraints(data);
-      return result;
+      const accessToken = jwtHelper.accessTokenGenerator(result.id);
+      const refreshToken = jwtHelper.refreshTokenGenerator(result.id);
+      return { ...result, accessToken, refreshToken };
     } catch (e: any) {
       console.log("Error in userService layer ", e);
       throw new Error(e.message || "Error creating the user.");

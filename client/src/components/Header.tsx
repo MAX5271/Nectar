@@ -1,10 +1,26 @@
 import React from 'react';
 import { useSmartNavigate } from '../hooks/useSmartNavigate';
+import { useAppSelector } from '../hooks/reduxHooks';
 
 const Header: React.FC = () => {
 
+  const isAuthenticated  = useAppSelector(state => state.auth.isAuthenticated);
+  console.log(isAuthenticated);
+  const username = useAppSelector(state => state.auth.user?.username);
+
   const navigate = useSmartNavigate();
 
+  const routes = {
+    'Dashboard': '/dashboard',
+    'Diet Plan': '/diet-history',
+  }
+
+  // writing as const after the array means that the array won't change after initialization
+  const navItems = ['Dashboard', 'Diet Plan'] as const;
+
+    const handleRoutes = (item:keyof typeof routes) =>{
+    navigate(routes[item] as string);
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b-4 border-red-600 bg-black">
@@ -21,10 +37,10 @@ const Header: React.FC = () => {
 
         <nav className="hidden md:block">
           <ul className="flex items-center gap-10 text-sm font-bold uppercase tracking-widest text-zinc-500">
-            {['Dashboard', 'Diet Plan', 'Stats'].map((item) => (
-              <li key={item}>
-                <a 
-                  href="#" 
+            {navItems.map((item) => (
+              <li key={item} onClick={()=>handleRoutes(item)} >
+                <a
+                
                   className="group relative py-2 transition-colors hover:text-white"
                 >
                   {item}
@@ -36,9 +52,14 @@ const Header: React.FC = () => {
         </nav>
 
         <div className="flex items-center gap-8">
-          <button onClick={()=>navigate('/login')} className="hidden text-sm font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:text-white sm:block">
+          {!isAuthenticated?
+            <button onClick={()=>navigate('/login')} className="hidden text-sm font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:text-white sm:block">
             Log in
+          </button>:
+          <button onClick={()=>navigate('/dashboard')} className="hidden text-sm font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:text-white sm:block">
+            {username}
           </button>
+          }
           
           <button onClick={()=>navigate('/about')} className="hidden transform bg-red-600 px-8 py-3 text-sm font-black uppercase tracking-widest text-black transition-all hover:-translate-y-1 hover:bg-red-500 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-0 active:shadow-none md:block">
             Initialize

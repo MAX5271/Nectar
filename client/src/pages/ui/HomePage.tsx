@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSmartNavigate } from '../hooks/useSmartNavigate';
+import { useSmartNavigate } from '../../hooks/useSmartNavigate';
 
 const Home: React.FC = () => {
 

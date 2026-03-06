@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { type NectarPayload } from '../../types';
 import { useSmartNavigate } from '../../hooks/useSmartNavigate';
 
@@ -12,6 +12,7 @@ interface StepProps {
 const Step1Credentials: React.FC<StepProps> = ({ payload, updatePayload, nextStep }) => {
 
   const navigate = useSmartNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleContinue = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -48,14 +49,27 @@ const Step1Credentials: React.FC<StepProps> = ({ payload, updatePayload, nextSte
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">Access Code</label>
-        <input 
-          type="password" required value={payload.password || ''}
-          onChange={(e) => updatePayload({ password: e.target.value })}
-          className="border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-white outline-none transition-colors focus:border-red-600"
-          placeholder="••••••••"
-        />
-      </div>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+                Security Key
+              </label>
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 transition-colors hover:text-white focus:outline-none"
+              >
+                [{showPassword ? 'Hide' : 'Show'}]
+              </button>
+            </div>
+            <input 
+              type={showPassword ? "text" : "password"} 
+              required
+              value={payload.password}
+              onChange={(e) => updatePayload({ password: e.target.value })}
+              className="border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-white placeholder-zinc-700 outline-none transition-colors focus:border-red-600"
+              placeholder="CREATE A SECURE PHRASE"
+            />
+          </div>
 
       <div className="mt-4 flex flex-col gap-4">
         <button type="submit" className="w-full transform bg-red-600 px-8 py-4 text-sm font-black uppercase tracking-widest text-black transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-0 active:shadow-none">

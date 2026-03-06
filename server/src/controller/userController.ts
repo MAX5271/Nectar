@@ -1,3 +1,4 @@
+import { access } from "node:fs";
 import { userService } from "../services/userService.js";
 import type { Request, Response } from "express";
 
@@ -14,13 +15,21 @@ class UserController {
         age, gender, planType, unitSystem, preferences 
       });
 
+      res.cookie("jwt", result.refreshToken, {
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          sameSite: "strict",
+          httpOnly: true,
+          secure: true,
+        });
+
       res.status(201).json({
         success: true,
         message: "User created successfully",
         data: {
           id: result.id,
           username: result.username,
-          email: result.email
+          email: result.email,
+          accessToken: result.accessToken,
         },
       });
     } catch (error: any) {
