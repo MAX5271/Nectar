@@ -3,11 +3,21 @@ import { useAppSelector, useAppDispatch } from '../../hooks/reduxHooks';
 import { setLoading, setLatestPlan, clearDietData } from '../../store/slices/dietSlice';
 import { logout } from '../../store/slices/authSlice';
 import api from '../../services/api';
+import { useSmartNavigate } from '../../hooks/useSmartNavigate';
 
 const Dashboard: React.FC = () => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { latestPlan, isLoading } = useAppSelector((state) => state.diet);
+  const navigate = useSmartNavigate();
+
+  const userConstraints = user?.constraints?.[0];
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     const fetchLatestPlan = async () => {
@@ -20,8 +30,10 @@ const Dashboard: React.FC = () => {
         console.error('[SYSTEM] No active plan found or fetch failed.', error);
       }
     };
-    fetchLatestPlan();
-  }, [dispatch]);
+    if (user) {
+      fetchLatestPlan();
+    }
+  }, [dispatch, user]);
 
   const isPlanGeneratedToday = () => {
     if (!latestPlan?.date) return false;
@@ -35,6 +47,7 @@ const Dashboard: React.FC = () => {
   const handleLogout = () => {
     dispatch(clearDietData());
     dispatch(logout());
+    navigate('/login');
   };
 
   const handleGeneratePlan = async () => {
@@ -42,7 +55,7 @@ const Dashboard: React.FC = () => {
     
     dispatch(setLoading(true));
     try {
-      const planResponse = await api.post('/diet/plan');
+      const planResponse = await api.get('/diet/plan');
       const newPlanId = planResponse.data.result.id;
       
       const fullPlanResponse = await api.get(`/diet/${newPlanId}`);
@@ -55,7 +68,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  return (
+  return user ? (
     <div className="min-h-screen bg-zinc-950 text-white font-sans p-6 lg:p-12">
       <header className="flex justify-between items-end border-b-4 border-zinc-800 pb-6 mb-8">
         <div>
@@ -78,19 +91,15 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="block text-[10px] text-zinc-600 uppercase">Height</span>
-                <span className="text-xl font-black">187 CM</span>
+                <span className="text-xl font-black">{userConstraints?.height || '---'} CM</span>
               </div>
               <div>
                 <span className="block text-[10px] text-zinc-600 uppercase">Phase</span>
-                <span className="text-xl font-black text-red-600">CUTTING</span>
+                <span className="text-xl font-black text-red-600">{userConstraints?.planType || '---'}</span>
               </div>
               <div>
                 <span className="block text-[10px] text-zinc-600 uppercase">Current Mass</span>
-                <span className="text-xl font-black">88 KG</span>
-              </div>
-              <div>
-                <span className="block text-[10px] text-zinc-600 uppercase">Target Mass</span>
-                <span className="text-xl font-black text-green-500">80 KG</span>
+                <span className="text-xl font-black">{userConstraints?.weight || '---'} KG</span>
               </div>
             </div>
           </div>
@@ -119,7 +128,7 @@ const Dashboard: React.FC = () => {
                     <span className="text-red-500">{latestPlan.totalCalories} KCAL</span>
                   </div>
                   <div className="h-2 bg-zinc-900 w-full">
-                    <div className="h-full bg-red-600 w-full"></div>
+                    <div className="h-full bg-red-600 w-full" style={{ width: '100%' }}></div>
                   </div>
                 </div>
                 <div>
@@ -128,7 +137,7 @@ const Dashboard: React.FC = () => {
                     <span className="text-white">{latestPlan.totalProtein}g</span>
                   </div>
                   <div className="h-1 bg-zinc-900 w-full">
-                    <div className="h-full bg-blue-500 w-full"></div>
+                    <div className="h-full bg-blue-500 w-full" style={{ width: '100%' }}></div>
                   </div>
                 </div>
                 <div>
@@ -137,7 +146,7 @@ const Dashboard: React.FC = () => {
                     <span className="text-white">{latestPlan.totalCarbs}g</span>
                   </div>
                   <div className="h-1 bg-zinc-900 w-full">
-                    <div className="h-full bg-yellow-500 w-full"></div>
+                    <div className="h-full bg-yellow-500 w-full" style={{ width: '100%' }}></div>
                   </div>
                 </div>
                 <div>
@@ -146,7 +155,7 @@ const Dashboard: React.FC = () => {
                     <span className="text-white">{latestPlan.totalFat}g</span>
                   </div>
                   <div className="h-1 bg-zinc-900 w-full">
-                    <div className="h-full bg-orange-500 w-full"></div>
+                    <div className="h-full bg-orange-500 w-full" style={{ width: '100%' }}></div>
                   </div>
                 </div>
               </div>
@@ -206,6 +215,8 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
     </div>
+  ) : (
+    <div className='min-h-screen'></div>
   );
 };
 

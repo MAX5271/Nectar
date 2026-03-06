@@ -2,11 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../../hooks/reduxHooks';
 import { setHistory } from '../../store/slices/dietSlice';
 import api from '../../services/api';
+import { useSmartNavigate } from '../../hooks/useSmartNavigate';
 
 const DietPlanHistory: React.FC = () => {
   const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
   const { history } = useAppSelector((state) => state.diet);
   const [isFetching, setIsFetching] = useState(true);
+  const navigate = useSmartNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -22,8 +31,10 @@ const DietPlanHistory: React.FC = () => {
       }
     };
 
-    fetchHistory();
-  }, [dispatch]);
+    if (isAuthenticated) {
+      fetchHistory();
+    }
+  }, [dispatch, isAuthenticated]);
 
   const formatArchiveDate = (isoString: string) => {
     const date = new Date(isoString);
@@ -35,7 +46,7 @@ const DietPlanHistory: React.FC = () => {
     }).toUpperCase();
   };
 
-  return (
+  return isAuthenticated ? (
     <div className="min-h-screen bg-zinc-950 text-white font-sans p-6 lg:p-12">
       <header className="mb-12 border-b-4 border-zinc-800 pb-6">
         <div className="flex items-center gap-4">
@@ -117,6 +128,8 @@ const DietPlanHistory: React.FC = () => {
         </div>
       )}
     </div>
+  ) : (
+    <div className='min-h-screen'></div>
   );
 };
 

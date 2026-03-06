@@ -67,18 +67,26 @@ const Register: React.FC = () => {
     console.log('[SYSTEM] Executing payload sequence:', payload);
     
     try {
-      const response = await api.post ('/user/signup', payload);
+      const response = await api.post('/user/signup', payload);
       sessionStorage.removeItem('nectar_step');
       sessionStorage.removeItem('nectar_payload');
+      
       if (response.data.success && response.data.data.accessToken) {
-        
-        const { id, username, email, accessToken } = response.data.data;
+        const { accessToken } = response.data.data;
 
-        // action for reducer
+        const profileResponse = await api.get('/user/profile', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        });
+
+        const userData = profileResponse.data.data;
+
         dispatch(setCredentials({
-          user: { id, username, email },
+          user: userData,
           token: accessToken,
         }));
+        
         navigate('/dashboard');
       }
     } catch (error) {

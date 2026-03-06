@@ -14,9 +14,9 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleReset = ()=>{
+  const handleReset = () => {
     setPassword('');
-  }
+  };
 
   const handleLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault(); 
@@ -24,18 +24,25 @@ const Login: React.FC = () => {
     console.log('[SYSTEM] Initiating authorization sequence...');
 
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const authResponse = await api.post('/auth/login', { email, password });
 
-      if (response.data.success && response.data.data.accessToken) {
-        const { id, username, email: userEmail, accessToken } = response.data.data;
+      if (authResponse.data.success && authResponse.data.data.accessToken) {
+        const { accessToken } = authResponse.data.data;
+
+        const profileResponse = await api.get('/user/profile', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        });
+
+        const userData = profileResponse.data.data;
 
         dispatch(setCredentials({
-          user: { id, username, email: userEmail },
+          user: userData,
           token: accessToken
         }));
 
         console.log('[SYSTEM] Authorization successful. Access granted.');
-        console.log(response);
         navigate('/dashboard');
       }
     } catch (error) {
@@ -93,7 +100,7 @@ const Login: React.FC = () => {
                 >
                   [{showPassword ? 'Hide' : 'Show'}]
                 </button>
-                <a onClick={handleReset} className="text-[10px] font-bold uppercase tracking-widest text-red-600 transition-colors hover:text-white">
+                <a onClick={handleReset} className="text-[10px] font-bold uppercase tracking-widest text-red-600 transition-colors hover:text-white cursor-pointer">
                   Reset
                 </a>
               </div>
