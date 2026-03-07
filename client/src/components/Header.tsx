@@ -12,10 +12,11 @@ const Header: React.FC = () => {
   const routes = {
     'Dashboard': '/dashboard',
     'Diet Plan': '/diet-history',
+    'Home' : '/'
   }
 
   // writing as const after the array means that the array won't change after initialization
-  const navItems = ['Dashboard', 'Diet Plan'] as const;
+  const navItems = ['Home','Dashboard', 'Diet Plan',] as const;
 
   const handleRoutes = (item: keyof typeof routes) => {
     navigate(routes[item] as string);
