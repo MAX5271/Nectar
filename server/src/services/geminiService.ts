@@ -27,16 +27,21 @@ class GeminiService {
         throw new Error("All fields are required.");
       }
 
-      // Calculation logic based on Mifflin-St Jeor
-      const isMetric = unitSystem === 'METRIC';
+      // 1. Safely normalize inputs to prevent NaN calculation errors
+      const safeWeight = Number(weight);
+      const safeHeight = Number(height);
+      const safeAge = Number(age);
+      const safeGender = String(gender).toUpperCase() as Gender;
+      const safePlanType = String(planType).toUpperCase() as PlanType;
+      const isMetric = String(unitSystem).toUpperCase() === 'METRIC';
       
       const BMR_CALC = {
         MALE: isMetric 
-          ? (10 * weight + 6.25 * height - 5 * age + 5)
-          : (4.536 * weight + 15.875 * height - 5 * age + 5),
+          ? (10 * safeWeight + 6.25 * safeHeight - 5 * safeAge + 5)
+          : (4.536 * safeWeight + 15.875 * safeHeight - 5 * safeAge + 5),
         FEMALE: isMetric
-          ? (10 * weight + 6.25 * height - 5 * age - 161)
-          : (4.536 * weight + 15.875 * height - 5 * age - 161)
+          ? (10 * safeWeight + 6.25 * safeHeight - 5 * safeAge - 161)
+          : (4.536 * safeWeight + 15.875 * safeHeight - 5 * safeAge - 161)
       };
 
       const GOAL_MODIFIER = {
@@ -45,9 +50,15 @@ class GeminiService {
         RECOMP: 0
       };
 
-      const baseBMR = BMR_CALC[gender];
+      // Ensure fallback to 0 if an invalid planType somehow bypasses typing
+      const baseBMR = BMR_CALC[safeGender] || 0; 
       const activityMultiplier = 1.2;
-      const targetCalories = Math.round(baseBMR * activityMultiplier + GOAL_MODIFIER[planType]);
+      const targetCalories = Math.round(baseBMR * activityMultiplier + (GOAL_MODIFIER[safePlanType] || 0));
+
+      // Sanity check to prevent sending NaN to Gemini
+      if (isNaN(targetCalories) || targetCalories <= 0) {
+        throw new Error(`Failed to calculate valid calories. BMR: ${baseBMR}`);
+      }
 
       const creativeConstraints = [
         "Focus on high-volume, low-calorie-dense foods that keep you full.",
@@ -59,7 +70,8 @@ class GeminiService {
       ];
       
       const dailyConstraint = creativeConstraints[Math.floor(Math.random() * creativeConstraints.length)];
-
+      console.log("Calculated Target:", targetCalories, "| Constraint:", dailyConstraint);
+      
       const prompt = `
       You are an expert nutritionist AI for the app NECTAR.
       Generate a 1-day personalized diet plan.
@@ -73,6 +85,7 @@ class GeminiService {
       2. Strictly adhere to all dietary restrictions found in the preferences: "${preferences}".
       3. TODAY'S STYLE CONSTRAINT: ${dailyConstraint}
       4. Provide exactly 5 meals.
+      5. MATH RULE: The sum of the 'calories' for all 5 meals MUST equal exactly ${targetCalories}. Do not deviate.
       
       JSON OUTPUT FORMAT:
       {

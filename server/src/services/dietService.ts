@@ -9,7 +9,7 @@ class DietService {
       weight: 88,
       height: 188,
       age: 22,
-      preferences: [],
+      preferences: "None",
       gender: Gender.MALE,
       unitSystem: UnitSystem.METRIC,
       planType: PlanType.CUTTING,
