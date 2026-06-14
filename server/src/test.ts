@@ -1,7 +1,7 @@
 // If you don't have dotenv installed, run: npm install dotenv
 import 'dotenv/config'; 
 import { geminiService } from './services/geminiService.js';
-import { Gender,UnitSystem,PlanType } from '@prisma/client';
+import { Gender, UnitSystem, PlanType } from '@prisma/client';
 
 const dummyUser = {
     planType: PlanType.CUTTING,
@@ -9,7 +9,8 @@ const dummyUser = {
     weight: 85,
     height: 180,
     unitSystem: UnitSystem.METRIC,
-    preferences: ["High Protein", "No Dairy"],
+    // FIX: Converted the array into a single descriptive string
+    preferences: "High Protein, No Dairy", 
     age: 22
 };
 
