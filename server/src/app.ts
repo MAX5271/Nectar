@@ -6,6 +6,7 @@ import authRouter from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import dietRouter from "./routes/dietRoutes.js";
 import healthRouter from "./routes/healthRoutes.js";
+import trackingRouter from "./routes/trackingRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { authLimiter } from "./middleware/rateLimiters.js";
 import { requestLogger } from "./middleware/requestLogger.js";
@@ -39,7 +40,9 @@ app.use("/api/user/signup", authLimiter);
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRoutes);
 app.use("/api/diet", dietRouter);
+app.use("/api/tracking", trackingRouter);
 
 app.use(errorHandler);
+
 
 export default app;

@@ -1,4 +1,4 @@
-import { Gender, PlanType, UnitSystem } from "@prisma/client";
+import { ActivityLevel, Gender, MealType, PlanType, UnitSystem } from "@prisma/client";
 import { z } from "zod";
 
 const upper = (v: unknown) => (typeof v === "string" ? v.trim().toUpperCase() : v);
@@ -18,6 +18,9 @@ export const signUpSchema = z.object({
   gender: z.preprocess(upper, z.nativeEnum(Gender)),
   planType: z.preprocess(upper, z.nativeEnum(PlanType)),
   unitSystem: z.preprocess(upper, z.nativeEnum(UnitSystem)),
+  activityLevel: z
+    .preprocess(upper, z.nativeEnum(ActivityLevel))
+    .default(ActivityLevel.SEDENTARY),
   preferences: z.string().trim().max(200).default(""),
 });
 
@@ -27,3 +30,48 @@ export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(1),
 });
+
+export const updateProfileSchema = z.object({
+  username: z.string().trim().min(1).max(50).optional(),
+  email: z.string().trim().toLowerCase().email().max(254).optional(),
+  age: z.coerce.number().int().min(13).max(120).optional(),
+  height: positive(300).optional(),
+  weight: positive(700).optional(),
+  gender: z.preprocess(upper, z.nativeEnum(Gender)).optional(),
+  planType: z.preprocess(upper, z.nativeEnum(PlanType)).optional(),
+  unitSystem: z.preprocess(upper, z.nativeEnum(UnitSystem)).optional(),
+  activityLevel: z.preprocess(upper, z.nativeEnum(ActivityLevel)).optional(),
+  preferences: z.string().trim().max(200).optional(),
+});
+
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+export const mealSwapSchema = z.object({
+  dietId: z.string().min(1, "dietId is required"),
+  reason: z.string().trim().max(200).optional(),
+});
+
+export type MealSwapInput = z.infer<typeof mealSwapSchema>;
+
+export const logWeightSchema = z.object({
+  weight: positive(700),
+  date: z.coerce.date().optional(),
+  note: z.string().trim().max(200).optional(),
+});
+
+export type LogWeightInput = z.infer<typeof logWeightSchema>;
+
+export const logMealSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  mealType: z.preprocess(upper, z.nativeEnum(MealType)),
+  calories: z.coerce.number().nonnegative(),
+  protein: z.coerce.number().nonnegative(),
+  carbs: z.coerce.number().nonnegative(),
+  fat: z.coerce.number().nonnegative(),
+  adhered: z.boolean().default(true),
+  date: z.coerce.date().optional(),
+  dietPlanId: z.string().optional(),
+});
+
+export type LogMealInput = z.infer<typeof logMealSchema>;
+

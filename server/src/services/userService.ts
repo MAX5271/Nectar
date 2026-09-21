@@ -4,7 +4,8 @@ import { sessionRepository } from "../repository/sessionRepository.js";
 import { jwtHelper } from "../utils/jwtHelper.js";
 import { HttpError } from "../utils/httpError.js";
 import StatusCode from "../utils/statusCodes.js";
-import type { SignUpInput } from "../utils/validation.js";
+import type { SignUpInput, UpdateProfileInput } from "../utils/validation.js";
+import { validateAgeSafety } from "../utils/safetyGuardrails.js";
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -45,6 +46,19 @@ class UserService {
     if (!result) throw new HttpError(StatusCode.NOT_FOUND, "User not found.");
     return result;
   }
+
+  async updateUserProfile(userId: string, data: UpdateProfileInput) {
+    if (data.age !== undefined) {
+      const ageCheck = validateAgeSafety(data.age);
+      if (!ageCheck.allowed) {
+        throw new HttpError(StatusCode.BAD_REQUEST, ageCheck.error!);
+      }
+    }
+    const updated = await userRepository.updateUserProfile(userId, data);
+    if (!updated) throw new HttpError(StatusCode.NOT_FOUND, "User not found.");
+    return updated;
+  }
 }
 
 export const userService = new UserService();
+

@@ -1,7 +1,7 @@
 import { dietRepository } from "../repository/dietRepository.js";
 import { userRepository } from "../repository/userRepository.js";
 import { dietHelper } from "../utils/dietHelper.js";
-import { geminiService } from "./geminiService.js";
+import { geminiService, explainPlan as explainPlanHelper } from "./geminiService.js";
 import { HttpError } from "../utils/httpError.js";
 import StatusCode from "../utils/statusCodes.js";
 
@@ -51,6 +51,58 @@ class DietService {
   getDietPlanHistory(userId: string) {
     return dietRepository.getDietPlanHistory(userId);
   }
+
+  async explainPlan(userId: string) {
+    const constraints = await userRepository.getConstraints(userId);
+    if (!constraints) {
+      throw new HttpError(
+        StatusCode.BAD_REQUEST,
+        "No biometric profile found for this user.",
+      );
+    }
+    return explainPlanHelper(constraints);
+  }
+
+  async swapMeal(userId: string, dietId: string, reason?: string) {
+    const mealRecord = await dietRepository.findMealWithPlan(dietId);
+    if (!mealRecord || mealRecord.dietPlan.userId !== userId) {
+      throw new HttpError(StatusCode.NOT_FOUND, "Meal not found in your diet plans.");
+    }
+
+    const constraints = await userRepository.getConstraints(userId);
+    if (!constraints) {
+      throw new HttpError(
+        StatusCode.BAD_REQUEST,
+        "No biometric profile found for this user.",
+      );
+    }
+
+    const swapped = await geminiService.generateMealSwap(
+      {
+        mealType: mealRecord.mealType,
+        calories: mealRecord.calories,
+        carb: mealRecord.carb,
+        protein: mealRecord.protein,
+        fat: mealRecord.fat,
+      },
+      constraints,
+      reason,
+    );
+
+    return await dietRepository.updateMealAndRecalculateTotals(
+      dietId,
+      mealRecord.dietPlanId,
+      {
+        meal: swapped.foodName,
+        portion: swapped.portion,
+        calories: Math.round(swapped.calories),
+        protein: Math.round(swapped.protein),
+        carb: Math.round(swapped.carbs),
+        fat: Math.round(swapped.fat),
+      },
+    );
+  }
 }
 
 export const dietService = new DietService();
+

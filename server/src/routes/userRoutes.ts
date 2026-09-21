@@ -4,7 +4,8 @@ import { verifyJWT } from "../middleware/verifyJWT.js";
 
 const router = Router();
 
-router.post('/signup',userController.signUp);
-router.get('/profile',verifyJWT.verifyJWT,userController.getUserProfile);
+router.post('/signup', userController.signUp);
+router.get('/profile', verifyJWT.verifyJWT.bind(verifyJWT), userController.getUserProfile);
+router.patch('/profile', verifyJWT.verifyJWT.bind(verifyJWT), userController.updateUserProfile);
 
 export default router;

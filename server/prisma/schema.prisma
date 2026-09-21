@@ -33,16 +33,25 @@ enum MealType {
   SNACK
 }
 
+enum ActivityLevel {
+  SEDENTARY
+  LIGHT
+  MODERATE
+  VERY_ACTIVE
+  EXTRA_ACTIVE
+}
+
 // 2. Define the main data tables
 model DietaryConstraint {
-  id          String     @id @default(uuid())
-  planType    PlanType
-  gender      Gender
-  unitSystem  UnitSystem
-  height      Float
-  weight      Float
-  age         Int
-  preferences String
+  id            String        @id @default(uuid())
+  planType      PlanType
+  gender        Gender
+  unitSystem    UnitSystem
+  activityLevel ActivityLevel @default(SEDENTARY)
+  height        Float
+  weight        Float
+  age           Int
+  preferences   String
 
   // Strict 1-to-1 link back to User
   userId      String     @unique

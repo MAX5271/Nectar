@@ -56,6 +56,51 @@ class DietRepository {
     });
     return plans.map((p) => withDietCompat(p)!);
   }
+
+  async findMealWithPlan(dietId: string) {
+    return await prisma.diet.findUnique({
+      where: { id: dietId },
+      include: { dietPlan: true },
+    });
+  }
+
+  async updateMealAndRecalculateTotals(
+    dietId: string,
+    planId: string,
+    data: Prisma.DietUpdateInput,
+  ) {
+    // 1. Update the individual meal
+    const updatedDiet = await prisma.diet.update({
+      where: { id: dietId },
+      data,
+    });
+
+    // 2. Fetch all meals for this plan to compute new exact totals
+    const allMeals = await prisma.diet.findMany({
+      where: { dietPlanId: planId },
+    });
+
+    const sum = (key: "calories" | "protein" | "carb" | "fat") =>
+      Math.round(allMeals.reduce((acc, m) => acc + m[key], 0));
+
+    // 3. Update parent DietPlan totals
+    const updatedPlan = await prisma.dietPlan.update({
+      where: { id: planId },
+      data: {
+        totalCalories: sum("calories"),
+        totalProtein: sum("protein"),
+        totalCarbs: sum("carb"),
+        totalFat: sum("fat"),
+      },
+      include: { diets: true },
+    });
+
+    return {
+      meal: { ...updatedDiet, type: updatedDiet.mealType },
+      plan: withDietCompat(updatedPlan)!,
+    };
+  }
 }
 
 export const dietRepository = new DietRepository();
+

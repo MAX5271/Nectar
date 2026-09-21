@@ -1,11 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Gender, PlanType, UnitSystem } from "@prisma/client";
+import { ActivityLevel, Gender, MealType, PlanType, UnitSystem } from "@prisma/client";
 import { z } from "zod";
 import { HttpError } from "../utils/httpError.js";
 import { geminiStubEnabled, stubMeals } from "./geminiStub.js";
 import { config } from "../config.js";
 import { logger } from "../utils/logger.js";
 import {
+  checkMedicalConditions,
   validateCaloricSafety,
   verifyAllergySafety,
 } from "../utils/safetyGuardrails.js";
@@ -28,27 +29,36 @@ export interface DietPlanReq {
   gender: Gender;
   planType: PlanType;
   unitSystem: UnitSystem;
+  activityLevel?: ActivityLevel;
 }
 
+export const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
+  SEDENTARY: 1.2,
+  LIGHT: 1.375,
+  MODERATE: 1.55,
+  VERY_ACTIVE: 1.725,
+  EXTRA_ACTIVE: 1.9,
+};
+
 const macro = z.coerce.number().finite().nonnegative();
+
+export const singleMealSchema = z.object({
+  mealType: z.string().min(1),
+  foodName: z.string().min(1),
+  portion: z.string().min(1),
+  calories: macro,
+  protein: macro,
+  carbs: macro,
+  fat: macro,
+});
+
 export const aiPlanSchema = z.object({
   meals: z
-    .array(
-      z.object({
-        mealType: z.string().min(1),
-        foodName: z.string().min(1),
-        portion: z.string().min(1),
-        calories: macro,
-        protein: macro,
-        carbs: macro,
-        fat: macro,
-      }),
-    )
+    .array(singleMealSchema)
     .length(5),
 });
 
 export const BMR_FLOOR_CALORIES = 1200;
-const ACTIVITY_MULTIPLIER = 1.2;
 const MAX_ATTEMPTS = 2;
 const CALORIE_TOLERANCE = 0.1;
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -93,8 +103,10 @@ export function sanitizePreferences(raw: string): string {
 class GeminiService {
   calculateTargetCalories(req: DietPlanReq): number {
     const bmr = calculateBmr(req);
+    const multiplier =
+      ACTIVITY_MULTIPLIERS[req.activityLevel || ActivityLevel.SEDENTARY] || 1.2;
     const target = Math.round(
-      bmr * ACTIVITY_MULTIPLIER + GOAL_MODIFIER[req.planType],
+      bmr * multiplier + GOAL_MODIFIER[req.planType],
     );
     if (!Number.isFinite(target) || target <= 0) {
       throw new Error(`Failed to calculate valid calories. BMR: ${bmr}`);
@@ -213,6 +225,135 @@ class GeminiService {
     logger.error({ err: lastError }, "Gemini generation failed after max attempts");
     throw new HttpError(502, "Could not generate a valid diet plan. Please try again.");
   }
+
+  async generateMealSwap(
+    currentMeal: {
+      mealType: MealType | string;
+      calories: number;
+      carb: number;
+      protein: number;
+      fat: number;
+    },
+    req: DietPlanReq,
+    reason?: string,
+  ) {
+    const preferences = sanitizePreferences(req.preferences);
+    const targetCalories = currentMeal.calories;
+
+    if (geminiStubEnabled) {
+      return {
+        mealType: String(currentMeal.mealType),
+        foodName: `Alternative ${currentMeal.mealType}: Mediterranean Stir-fry`,
+        portion: "1 plate (300g)",
+        calories: Math.round(targetCalories),
+        protein: Math.round(currentMeal.protein),
+        carbs: Math.round(currentMeal.carb),
+        fat: Math.round(currentMeal.fat),
+      };
+    }
+
+    const prompt = `
+      You are an expert nutritionist AI for NECTAR.
+      The user wants to SWAP a single meal from their daily meal plan.
+
+      CURRENT MEAL TYPE: ${currentMeal.mealType}
+      TARGET CALORIES: ${targetCalories} kcal (must be within +/- 10%)
+      USER REASON FOR SWAP: "${reason ? sanitizePreferences(reason) : "Different variety"}"
+      USER PREFERENCES/ALLERGIES: "${preferences}"
+
+      REQUIREMENTS:
+      1. Provide a delicious, healthy alternative for ${currentMeal.mealType}.
+      2. Strictly avoid any allergens listed in preferences.
+      3. Do NOT suggest the food the user disliked.
+      4. Target ~${targetCalories} kcal (calories must be between ${Math.round(targetCalories * 0.9)} and ${Math.round(targetCalories * 1.1)}).
+
+      JSON OUTPUT FORMAT:
+      {
+        "mealType": "${currentMeal.mealType}",
+        "foodName": "string",
+        "portion": "string",
+        "calories": number,
+        "protein": number,
+        "carbs": number,
+        "fat": number
+      }
+    `;
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const meal = singleMealSchema.parse(
+          JSON.parse(
+            (await model.generateContent(prompt, { timeout: REQUEST_TIMEOUT_MS }))
+              .response.text(),
+          ),
+        );
+
+        const allergyCheck = verifyAllergySafety(
+          [{ meal: meal.foodName, portion: meal.portion }],
+          req.preferences,
+        );
+        if (!allergyCheck.safe) {
+          throw new Error("Allergy violation detected in swapped meal");
+        }
+
+        return meal;
+      } catch (e) {
+        logger.error({ err: e, attempt }, "Gemini single meal swap attempt failed");
+      }
+    }
+
+    throw new HttpError(
+      StatusCode.BAD_GATEWAY,
+      "Could not generate a replacement meal. Please try again.",
+    );
+  }
+}
+
+export function explainPlan(req: DietPlanReq) {
+  const bmr = Math.round(calculateBmr(req));
+  const activityLevel = req.activityLevel || ActivityLevel.SEDENTARY;
+  const activityMultiplier = ACTIVITY_MULTIPLIERS[activityLevel] || 1.2;
+  const tdee = Math.round(bmr * activityMultiplier);
+  const goalAdjustment = GOAL_MODIFIER[req.planType];
+  const targetCalories = Math.max(
+    Math.round(tdee + goalAdjustment),
+    BMR_FLOOR_CALORIES,
+  );
+
+  // Standard balanced macro split: Protein 30%, Carbs 40%, Fat 30%
+  const proteinCalories = Math.round(targetCalories * 0.3);
+  const carbsCalories = Math.round(targetCalories * 0.4);
+  const fatCalories = Math.round(targetCalories * 0.3);
+
+  const proteinGrams = Math.round(proteinCalories / 4);
+  const carbsGrams = Math.round(carbsCalories / 4);
+  const fatGrams = Math.round(fatCalories / 9);
+
+  return {
+    bmr,
+    activityLevel,
+    activityMultiplier,
+    tdee,
+    goal: req.planType,
+    goalAdjustment,
+    targetCalories,
+    macroSplit: {
+      proteinGrams,
+      carbsGrams,
+      fatGrams,
+      proteinCalories,
+      carbsCalories,
+      fatCalories,
+      proteinPct: 30,
+      carbsPct: 40,
+      fatPct: 30,
+    },
+    safetyFloorApplied:
+      targetCalories === BMR_FLOOR_CALORIES &&
+      tdee + goalAdjustment < BMR_FLOOR_CALORIES,
+    medicalAdvisories: checkMedicalConditions(req.preferences),
+  };
 }
 
 export const geminiService = new GeminiService();
+

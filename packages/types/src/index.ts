@@ -10,6 +10,12 @@ export type PlanType = "CUTTING" | "BULKING" | "RECOMP";
 export type Gender = "MALE" | "FEMALE";
 export type UnitSystem = "METRIC" | "IMPERIAL";
 export type MealType = "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK";
+export type ActivityLevel =
+  | "SEDENTARY"
+  | "LIGHT"
+  | "MODERATE"
+  | "VERY_ACTIVE"
+  | "EXTRA_ACTIVE";
 
 // Dietary Constraints DTO
 export interface DietaryConstraintDTO {
@@ -17,6 +23,7 @@ export interface DietaryConstraintDTO {
   planType: PlanType;
   gender: Gender;
   unitSystem: UnitSystem;
+  activityLevel?: ActivityLevel;
   height: number;
   weight: number;
   age: number;
@@ -113,3 +120,64 @@ export interface MealFeedbackDTO {
   isBlocked: boolean;
   userId: string;
 }
+
+// Profile Update DTO
+export interface UpdateProfileDTO {
+  username?: string;
+  email?: string;
+  planType?: PlanType;
+  gender?: Gender;
+  unitSystem?: UnitSystem;
+  activityLevel?: ActivityLevel;
+  height?: number;
+  weight?: number;
+  age?: number;
+  preferences?: string;
+}
+
+// Meal Swap DTO
+export interface MealSwapRequestDTO {
+  dietId: string;
+  reason?: string;
+}
+
+// Weight Trend Analysis DTO
+export interface WeightTrendPointDTO {
+  date: string;
+  weight: number;
+  movingAverage7Day: number;
+}
+
+export interface WeightTrendDTO {
+  history: WeightTrendPointDTO[];
+  currentWeight: number | null;
+  latestMovingAverage: number | null;
+  weeklyChangeKg: number | null;
+  direction: "LOSING" | "GAINING" | "MAINTAINING" | "INSUFFICIENT_DATA";
+}
+
+// Plan Explanation DTO
+export interface PlanExplanationDTO {
+  bmr: number;
+  activityLevel: ActivityLevel;
+  activityMultiplier: number;
+  tdee: number;
+  goal: PlanType;
+  goalAdjustment: number;
+  targetCalories: number;
+  clampedCalories?: number;
+  macroSplit: {
+    proteinGrams: number;
+    carbsGrams: number;
+    fatGrams: number;
+    proteinCalories: number;
+    carbsCalories: number;
+    fatCalories: number;
+    proteinPct: number;
+    carbsPct: number;
+    fatPct: number;
+  };
+  safetyFloorApplied: boolean;
+  medicalAdvisories: string[];
+}
+

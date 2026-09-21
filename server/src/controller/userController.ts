@@ -1,7 +1,7 @@
 import { userService } from "../services/userService.js";
 import type { Request, Response } from "express";
 import StatusCode from "../utils/statusCodes.js";
-import { signUpSchema } from "../utils/validation.js";
+import { signUpSchema, updateProfileSchema } from "../utils/validation.js";
 import { REFRESH_COOKIE, refreshCookieOptions } from "../utils/cookie.js";
 
 class UserController {
@@ -28,6 +28,17 @@ class UserController {
     const result = await userService.getUserProfile(req.id as string);
     res.status(StatusCode.SUCCESS).json({ success: true, data: result });
   }
+
+  async updateUserProfile(req: Request, res: Response): Promise<void> {
+    const input = updateProfileSchema.parse(req.body);
+    const result = await userService.updateUserProfile(req.id as string, input);
+    res.status(StatusCode.SUCCESS).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: result,
+    });
+  }
 }
 
 export const userController = new UserController();
+
