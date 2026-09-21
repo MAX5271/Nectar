@@ -1,12 +1,12 @@
 import rateLimit from "express-rate-limit";
+import { config } from "../config.js";
+import { logger } from "../utils/logger.js";
 
 // Benchmarks (docs/PERFORMANCE.md) disable limiting so they measure the app and
 // not the limiter. The switch is ignored in production.
-const disabled =
-  process.env.RATE_LIMIT_DISABLED === "true" &&
-  process.env.NODE_ENV !== "production";
+const disabled = config.RATE_LIMIT_DISABLED && config.NODE_ENV !== "production";
 
-if (disabled) console.warn("[SERVER] Rate limiting is DISABLED (benchmark mode).");
+if (disabled) logger.warn("Rate limiting is DISABLED (benchmark mode).");
 
 const skip = () => disabled;
 

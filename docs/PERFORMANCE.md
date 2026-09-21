@@ -686,7 +686,7 @@ Rendered from run records (section 6). Empty until the runs exist. Every cell is
 
 
 <!-- BEGIN GENERATED:phase0a -->
-_Rendered by `node performance/perf.mjs report` from 30 published run record(s) in `performance/runs/`. Excluded: 0 (0 from a dirty tree, 0 failed validity). Latencies in ms, per-run percentiles aggregated by **median across runs** (section 4.5)._
+_Rendered by `node performance/perf.mjs report` from 31 published run record(s) in `performance/runs/`. Excluded: 0 (0 from a dirty tree, 0 failed validity). Latencies in ms, per-run percentiles aggregated by **median across runs** (section 4.5)._
 
 | Scenario | Role | Commit | Dataset | Rate (rps) | Profile | Harness | Runs | n / run | p50 | p90 | p95 | p99 | max | p95 min–max | CV(p95) % | Stmts / req | Resp bytes p50 |
 |---|---|---|---|---:|---|---|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|---:|
@@ -694,6 +694,7 @@ _Rendered by `node performance/perf.mjs report` from 30 published run record(s) 
 | S4 | aa-a | `b6650da` | `D-M` | 640 | quick | 0.2.0 | 5 | 38401 | 0.62 | 0.73 | 0.85 | 1.93 | 9.17 | 0.82–0.86 | 1.96 | 2.00 | 363.0 |
 | S4 | aa-b | `b6650da` | `D-M` | 640 | quick | 0.1.1 | 5 | 38401 | 0.66 | 0.99 | 1.22 | 2.97 | 19.5 | 0.87–3.74 | 70.7 **noisy** | 2.00 | 363.0 |
 | S4 | aa-b | `b6650da` | `D-M` | 640 | quick | 0.2.0 | 5 | 38401 | 0.62 | 0.72 | 0.84 | 1.89 | 9.26 | 0.84–0.85 | 0.69 | 2.00 | 363.0 |
+| S4 | current | `b1fc986` | `D-M` | 320 | quick | 0.2.0 | 1 | 19201 | 1.12 | 1.67 | 1.92 | 3.81 | 11.9 | 1.92–1.92 | — | 2.00 | 363.0 |
 | S6 | aa-a | `b6650da` | `D-M` | 10 | quick | 0.1.1 | 5 | 601 | 31.5 | 33.6 | 34.9 | 40.3 | 62.4 | 32.5–36.4 | 5.04 | 2.00 | 9988.0 |
 | S6 | aa-b | `b6650da` | `D-M` | 10 | quick | 0.1.1 | 5 | 601 | 31.5 | 32.6 | 33.3 | 37.6 | 57.5 | 30.6–34.6 | 4.70 | 2.00 | 9988.0 |
 
@@ -715,6 +716,7 @@ _Rendered by `node performance/perf.mjs report` from 30 published run record(s) 
 - **S4 / aa-a / b6650da / D-M / 640 rps / quick / harness 0.2.0**: `20260921T131454Z_local_S4_b6650da_aa-a_r01`, `20260921T131749Z_local_S4_b6650da_aa-a_r02`, `20260921T132047Z_local_S4_b6650da_aa-a_r03`, `20260921T132345Z_local_S4_b6650da_aa-a_r04`, `20260921T132641Z_local_S4_b6650da_aa-a_r05`
 - **S4 / aa-b / b6650da / D-M / 640 rps / quick / harness 0.1.1**: `20260921T124745Z_local_S4_b6650da_aa-b_r01`, `20260921T125035Z_local_S4_b6650da_aa-b_r02`, `20260921T125324Z_local_S4_b6650da_aa-b_r03`, `20260921T125612Z_local_S4_b6650da_aa-b_r04`, `20260921T125901Z_local_S4_b6650da_aa-b_r05`
 - **S4 / aa-b / b6650da / D-M / 640 rps / quick / harness 0.2.0**: `20260921T131622Z_local_S4_b6650da_aa-b_r01`, `20260921T131918Z_local_S4_b6650da_aa-b_r02`, `20260921T132215Z_local_S4_b6650da_aa-b_r03`, `20260921T132513Z_local_S4_b6650da_aa-b_r04`, `20260921T132808Z_local_S4_b6650da_aa-b_r05`
+- **S4 / current / b1fc986 / D-M / 320 rps / quick / harness 0.2.0**: `20260921T143936Z_local_S4_b1fc986_current_r01`
 - **S6 / aa-a / b6650da / D-M / 10 rps / quick / harness 0.1.1**: `20260921T130026Z_local_S6_b6650da_aa-a_r01`, `20260921T130315Z_local_S6_b6650da_aa-a_r02`, `20260921T130604Z_local_S6_b6650da_aa-a_r03`, `20260921T130853Z_local_S6_b6650da_aa-a_r04`, `20260921T131143Z_local_S6_b6650da_aa-a_r05`
 - **S6 / aa-b / b6650da / D-M / 10 rps / quick / harness 0.1.1**: `20260921T130150Z_local_S6_b6650da_aa-b_r01`, `20260921T130440Z_local_S6_b6650da_aa-b_r02`, `20260921T130729Z_local_S6_b6650da_aa-b_r03`, `20260921T131018Z_local_S6_b6650da_aa-b_r04`, `20260921T131307Z_local_S6_b6650da_aa-b_r05`
 

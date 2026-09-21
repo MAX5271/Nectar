@@ -1,4 +1,6 @@
-const isProd = process.env.NODE_ENV === "production";
+import { config } from "../config.js";
+
+const isProd = config.NODE_ENV === "production";
 
 export const REFRESH_COOKIE = "jwt";
 

@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import { HttpError } from "../utils/httpError.js";
 import StatusCode from "../utils/statusCodes.js";
+import { logger } from "../utils/logger.js";
 
 // Express 5 forwards rejected promises from async handlers here.
 export function errorHandler(
@@ -31,7 +32,7 @@ export function errorHandler(
     return;
   }
 
-  console.error("[SERVER] Unhandled error:", error);
+  logger.error({ err: error }, "Unhandled server error");
   res
     .status(StatusCode.INTERNAL_SERVER_ERROR)
     .json({ success: false, message: "Internal server error" });

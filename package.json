@@ -1,0 +1,21 @@
+{
+  "name": "nectar-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "server",
+    "client",
+    "performance"
+  ],
+  "scripts": {
+    "build:types": "npm --workspace=@nectar/types run build",
+    "build:server": "npm --workspace=server run build",
+    "build:client": "npm --workspace=Nectar run build",
+    "build": "npm run build:types && npm run build:server && npm run build:client",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspace=server",
+    "dev:server": "npm --workspace=server run dev",
+    "dev:client": "npm --workspace=Nectar run dev"
+  }
+}

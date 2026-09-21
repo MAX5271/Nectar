@@ -1,14 +1,9 @@
 import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
+import { config } from "../config.js";
 
-const accessSecret = process.env.ACCESS_TOKEN_SECRET;
-const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
-
-if (!accessSecret || !refreshSecret) {
-  throw new Error(
-    "FATAL ERROR: ACCESS_TOKEN_SECRET or REFRESH_TOKEN_SECRET is not defined.",
-  );
-}
+const accessSecret = config.ACCESS_TOKEN_SECRET;
+const refreshSecret = config.REFRESH_TOKEN_SECRET;
 
 class JWT {
   accessTokenGenerator(id: string) {

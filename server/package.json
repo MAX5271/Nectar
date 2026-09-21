@@ -8,23 +8,34 @@
     "start": "node dist/src/index.js",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
     "test:gemini": "tsx --env-file=.env src/test.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.3.3",
+    "@types/pino-http": "^5.8.4",
+    "@types/supertest": "^7.2.1",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "supertest": "^7.2.2",
     "tsx": "^4.19.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.1"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@nectar/types": "*",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
     "@types/cookie-parser": "^1.4.10",
@@ -37,6 +48,8 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.3",
+    "pino": "^10.3.1",
+    "pino-http": "^11.0.0",
     "prisma": "^7.4.2",
     "zod": "^3.25.0"
   }

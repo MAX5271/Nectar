@@ -1,9 +1,11 @@
+import { config } from "../config.js";
+
 // Deterministic stand-in for Gemini, used by benchmarks (docs/PERFORMANCE.md).
 // Enabled with GEMINI_MODE=stub. Never honoured in production.
 export const geminiStubEnabled =
-  process.env.GEMINI_MODE === "stub" && process.env.NODE_ENV !== "production";
+  config.GEMINI_MODE === "stub" && config.NODE_ENV !== "production";
 
-const DELAY_MS = Number(process.env.GEMINI_STUB_DELAY_MS ?? 0);
+const DELAY_MS = config.GEMINI_STUB_DELAY_MS;
 
 const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snack", "Snack"];
 
