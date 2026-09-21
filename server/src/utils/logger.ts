@@ -9,6 +9,8 @@ export const logger = pino({
       "req.headers.cookie",
       "req.body.password",
       "req.body.refreshToken",
+      "req.body.token",
+      "req.query.token",
       "res.headers['set-cookie']",
     ],
     remove: true,
