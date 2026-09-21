@@ -130,4 +130,25 @@ describe("Session & Token Rotation Integration Tests", () => {
 
     expect(refreshRes.status).toBe(401);
   });
+
+  it("rotates refresh token via POST /api/auth/refresh with anti-CSRF header", async () => {
+    const loginRes = await request(app)
+      .post("/api/auth/login")
+      .send({ email: testUser.email, password: testUser.password });
+
+    const refreshCookie = extractCookie(loginRes, REFRESH_COOKIE)!;
+
+    const refreshRes = await request(app)
+      .post("/api/auth/refresh")
+      .set("Cookie", `${REFRESH_COOKIE}=${refreshCookie}`)
+      .set("X-Requested-With", "XMLHttpRequest");
+
+    expect(refreshRes.status).toBe(200);
+    expect(refreshRes.body.success).toBe(true);
+    expect(refreshRes.body.accessToken).toBeDefined();
+
+    const newRefreshCookie = extractCookie(refreshRes, REFRESH_COOKIE);
+    expect(newRefreshCookie).toBeDefined();
+    expect(newRefreshCookie).not.toBe(refreshCookie);
+  });
 });

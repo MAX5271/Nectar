@@ -15,13 +15,14 @@ import { config } from "./config.js";
 export const app = express();
 
 export function getAllowedOrigins(
-  env = config.NODE_ENV,
-  clientUrl = config.CLIENT_URL,
+  env: string = config.NODE_ENV,
+  clientUrl?: string,
 ): string[] {
+  const url = arguments.length > 1 ? clientUrl : config.CLIENT_URL;
   if (env === "production") {
-    return clientUrl ? [clientUrl] : [];
+    return url ? [url] : [];
   }
-  return [clientUrl, "http://localhost:5173"].filter(Boolean) as string[];
+  return [url, "http://localhost:5173"].filter(Boolean) as string[];
 }
 
 export const allowedOrigins = getAllowedOrigins();
