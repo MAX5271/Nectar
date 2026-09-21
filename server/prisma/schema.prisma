@@ -43,6 +43,8 @@ model DietaryConstraint {
   // Link back to the User
   userId String
   user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 model Diet {
@@ -59,6 +61,8 @@ model Diet {
   //Link back to DietPlan
   dietPlanId String
   dietPlan   DietPlan @relation(fields: [dietPlanId], references: [id])
+
+  @@index([dietPlanId])
 }
 
 model DietPlan {
@@ -73,6 +77,8 @@ model DietPlan {
   //Link back to the User
   userId String
   user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId, date])
 }
 
 model User {

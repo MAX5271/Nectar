@@ -1,61 +1,30 @@
-import { access } from "node:fs";
 import { userService } from "../services/userService.js";
 import type { Request, Response } from "express";
 import StatusCode from "../utils/statusCodes.js";
+import { signUpSchema } from "../utils/validation.js";
+import { REFRESH_COOKIE, refreshCookieOptions } from "../utils/cookie.js";
 
 class UserController {
   async signUp(req: Request, res: Response): Promise<void> {
-    try {
-      const { 
-        email, username, password, authProvider, height, weight, 
-        age, gender, planType, unitSystem, preferences 
-      } = req.body;
+    const input = signUpSchema.parse(req.body);
+    const result = await userService.signUp(input);
 
-      const result = await userService.signUp({ 
-        email, username, password, authProvider, height, weight, 
-        age, gender, planType, unitSystem, preferences 
-      });
-
-      res.cookie("jwt", result.refreshToken, {
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-          sameSite: "strict",
-          httpOnly: true,
-          secure: true,
-        });
-
-      res.status(StatusCode.CREATED).json({
-        success: true,
-        message: "User created successfully",
-        data: {
-          id: result.id,
-          username: result.username,
-          email: result.email,
-          accessToken: result.accessToken,
-        },
-      });
-    } catch (error: any) {
-      const status = error.message === "Email already in use." ? StatusCode.CONFLICT : StatusCode.BAD_REQUEST;
-      res.status(status).json({
-        success: false,
-        message: error.message || "An unexpected error occurred",
-      });
-    }
+    res.cookie(REFRESH_COOKIE, result.refreshToken, refreshCookieOptions);
+    res.status(StatusCode.CREATED).json({
+      success: true,
+      message: "User created successfully",
+      data: {
+        id: result.id,
+        username: result.username,
+        email: result.email,
+        accessToken: result.accessToken,
+      },
+    });
   }
 
   async getUserProfile(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.id as string;
-      const result = await userService.getUserProfile(userId);
-      res.status(StatusCode.SUCCESS).json({
-        success: true,
-        data: result,
-      });
-    } catch (error) {
-      res.status(StatusCode.NOT_FOUND).json({
-        success: false,
-        message: error instanceof Error ? error.message : "User not found",
-      });
-    }
+    const result = await userService.getUserProfile(req.id as string);
+    res.status(StatusCode.SUCCESS).json({ success: true, data: result });
   }
 }
 

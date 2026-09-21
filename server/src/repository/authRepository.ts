@@ -1,41 +1,26 @@
 import prisma from "../utils/db.js";
 import bcrypt from "bcrypt";
+import { HttpError } from "../utils/httpError.js";
+import StatusCode from "../utils/statusCodes.js";
 
 class AuthRepository {
   async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({
-      where: {
-        email: email.toLowerCase(),
-      },
-    });
-    if (!user) {
-      throw new Error("User not found.");
-    }
-    if (!bcrypt.compare(password, user.password!)) {
-      throw new Error("Invalid Password");
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    // Same error for unknown email and wrong password so we don't leak which exist.
+    const valid = user?.password
+      ? await bcrypt.compare(password, user.password)
+      : false;
+    if (!user || !valid) {
+      throw new HttpError(StatusCode.UNAUTHORIZED, "Invalid email or password.");
     }
     return user;
   }
-  async updateRefreshToken(id: string, token: string) {
-    const user = await prisma.user.findUnique({
-      where: {
-        id,
-      },
-    });
-    if (!user) throw new Error("User not found");
+
+  async updateRefreshToken(id: string, tokenHash: string | null) {
     await prisma.user.update({
-      where: {
-        id,
-      },
-      data: {
-        refreshToken: token,
-      },
-    });
-  }
-  async logout(userId: string) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: null },
+      where: { id },
+      data: { refreshToken: tokenHash },
     });
   }
 }

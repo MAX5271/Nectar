@@ -1,67 +1,34 @@
-import {
-  userRepository,
-  type UserRegistrationInput,
-} from "../repository/userRepository.js";
+import { userRepository } from "../repository/userRepository.js";
+import { authRepository } from "../repository/authRepository.js";
 import { jwtHelper } from "../utils/jwtHelper.js";
-
-export interface SignUpData extends UserRegistrationInput {}
+import { HttpError } from "../utils/httpError.js";
+import StatusCode from "../utils/statusCodes.js";
+import type { SignUpInput } from "../utils/validation.js";
 
 class UserService {
-  async signUp(data: SignUpData) {
+  async signUp(data: SignUpInput) {
+    let user;
     try {
-      const {
-        email,
-        username,
-        password,
-        authProvider,
-        height,
-        weight,
-        age,
-        gender,
-        planType,
-        unitSystem,
-      } = data;
-
-      if (
-        !email ||
-        !username ||
-        !height ||
-        !weight ||
-        !age ||
-        !gender ||
-        !planType ||
-        !unitSystem
-      ) {
-        throw new Error(
-          "Core identification and biometric fields are required.",
-        );
+      user = await userRepository.createUserWithConstraints(data);
+    } catch (e) {
+      if (e instanceof Error && e.message === "Email already in use.") {
+        throw new HttpError(StatusCode.CONFLICT, e.message);
       }
-
-      if (authProvider === "local" && !password) {
-        throw new Error(
-          "Password is required for local authentication protocols.",
-        );
-      }
-
-      const result = await userRepository.createUserWithConstraints(data);
-      const accessToken = jwtHelper.accessTokenGenerator(result.id);
-      const refreshToken = jwtHelper.refreshTokenGenerator(result.id);
-      return { ...result, accessToken, refreshToken };
-    } catch (e: any) {
-      console.log("Error in userService layer ", e);
-      throw new Error(e.message || "Error creating the user.");
+      throw e;
     }
+    const accessToken = jwtHelper.accessTokenGenerator(user.id);
+    const refreshToken = jwtHelper.refreshTokenGenerator(user.id);
+    await authRepository.updateRefreshToken(
+      user.id,
+      jwtHelper.hashToken(refreshToken),
+    );
+    return { id: user.id, username: user.username, email: user.email, accessToken, refreshToken };
   }
 
   async getUserProfile(userId: string) {
-    try {
-      const result = await userRepository.getUserProfile(userId);
-      if (!result) throw new Error("User not found.");
-      return result;
-    } catch (e) {
-      console.log("Error in userService layer ", e);
-      throw new Error("Error fetching the user profile.");
-    }
+    const result = await userRepository.getUserProfile(userId);
+    if (!result) throw new HttpError(StatusCode.NOT_FOUND, "User not found.");
+    return result;
   }
 }
 

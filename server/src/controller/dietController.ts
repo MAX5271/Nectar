@@ -4,62 +4,26 @@ import StatusCode from "../utils/statusCodes.js";
 
 class DietController {
   async dietPlan(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.id;
-      const result = await dietService.dietResponse(userId as string);
-      res.status(StatusCode.SUCCESS).json({
-        result: result,
-      });
-    } catch (e) {
-      console.log(e);
-    }
+    const result = await dietService.generateDailyPlan(req.id as string);
+    res.status(StatusCode.CREATED).json({ result });
   }
+
   async getLatestDietPlan(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.id;
-      const result = await dietService.getLatestDietPlan(userId as string);
-      res.status(StatusCode.SUCCESS).json({
-        result: result,
-      });
-    } catch (error) {
-      res.status(StatusCode.INTERNAL_SERVER_ERROR).json({
-        message: "Internal server error",
-        response: {},
-      });
-      console.log(error);
-    }
+    const result = await dietService.getLatestDietPlan(req.id as string);
+    res.status(StatusCode.SUCCESS).json({ result });
   }
 
   async getDietPlanById(req: Request, res: Response): Promise<void> {
-    try {
-      const dietPlanId = req.params.id;
-      const result = await dietService.getDietPlanById(dietPlanId as string);
-      res.status(StatusCode.SUCCESS).json({
-        result: result,
-      });
-    } catch (error) {
-      res.status(StatusCode.INTERNAL_SERVER_ERROR).json({
-        message: "Internal server error",
-        response: {},
-      });
-      console.log(error);
-    }
+    const result = await dietService.getDietPlanById(
+      req.params.id as string,
+      req.id as string,
+    );
+    res.status(StatusCode.SUCCESS).json({ result });
   }
 
   async getDietPlanHistory(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.id;
-      const result = await dietService.getDietPlanHistory(userId as string);
-      res.status(StatusCode.SUCCESS).json({
-        result: result,
-      });
-    } catch (error) {
-      res.status(StatusCode.INTERNAL_SERVER_ERROR).json({
-        message: "Internal server error",
-        response: {},
-      });
-      console.log(error);
-    }
+    const result = await dietService.getDietPlanHistory(req.id as string);
+    res.status(StatusCode.SUCCESS).json({ result });
   }
 }
 

@@ -1,45 +1,36 @@
-interface dietFormat {
+export interface MealInput {
   mealType: string;
   foodName: string;
   portion: string;
-  calories: Number;
-  protein: Number;
-  carbs: Number;
-  fat: Number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
 }
 
 class DietHelper {
-  dietFormater({
-    mealType,
-    foodName,
-    portion,
-    calories,
-    protein,
-    carbs,
-    fat,
-  }: dietFormat) {
-    const result = {
+  // All plan dates are UTC midnight so "today" means the same thing everywhere.
+  todayUTC(): Date {
+    const now = new Date();
+    return new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
+  }
+
+  dietFormater(
+    { mealType, foodName, portion, calories, protein, carbs, fat }: MealInput,
+    date: Date,
+  ) {
+    return {
       type: mealType,
       meal: foodName,
       portion,
-      calories: Math.round(calories as number),
-      protein: Math.round(protein as number),
-      carb: Math.round(carbs as number),
-      fat: Math.round(fat as number),
-      date: this.dateFormatPrisma(this.dateFormat(new Date())),
+      calories: Math.round(calories),
+      protein: Math.round(protein),
+      carb: Math.round(carbs),
+      fat: Math.round(fat),
+      date,
     };
-    return result;
-  }
-
-  dateFormat(date: Date) {
-    const formattedDate = date.toLocaleDateString("en-GB");
-    return formattedDate;
-  }
-
-  dateFormatPrisma(date: string) {
-    const [d, m, y] = date.split("/");
-    const prismaReadyDate = new Date(`${y}-${m}-${d}T00:00:00.000Z`);
-    return prismaReadyDate;
   }
 }
 

@@ -1,62 +1,67 @@
 import { dietRepository } from "../repository/dietRepository.js";
+import { userRepository } from "../repository/userRepository.js";
 import { dietHelper } from "../utils/dietHelper.js";
 import { geminiService } from "./geminiService.js";
-import { Gender, PlanType, UnitSystem } from "@prisma/client";
+import { HttpError } from "../utils/httpError.js";
+import StatusCode from "../utils/statusCodes.js";
 
 class DietService {
-  async dietPlan(userId: string) {
-    const result = await geminiService.generateAIPDietPlan({
-      weight: 88,
-      height: 188,
-      age: 22,
-      preferences: "None",
-      gender: Gender.MALE,
-      unitSystem: UnitSystem.METRIC,
-      planType: PlanType.CUTTING,
-    });
-    const date = new Date();
-    const formattedDate = dietHelper.dateFormat(date);
-    const prismaDate = dietHelper.dateFormatPrisma(formattedDate);
-    const dietResponse = {
-      date: prismaDate,
-      totalCalories: result.targetCalories,
-      totalProtein: result.totalProtein,
-      totalFat: result.totalFats,
-      totalCarbs: result.totalCarbs,
-      userId: userId,
-      diets: {
-        create: [
-          dietHelper.dietFormater(result.meals[0]),
-          dietHelper.dietFormater(result.meals[1]),
-          dietHelper.dietFormater(result.meals[2]),
-          dietHelper.dietFormater(result.meals[3]),
-          dietHelper.dietFormater(result.meals[4]),
-        ],
-      },
-    };
-    return dietResponse;
+  // Guards against double-clicks / parallel requests for the same user.
+  private inFlight = new Set<string>();
+
+  async generateDailyPlan(userId: string) {
+    const today = dietHelper.todayUTC();
+
+    if (await dietRepository.findPlanByDate(userId, today)) {
+      throw new HttpError(
+        StatusCode.CONFLICT,
+        "You have already generated a plan today.",
+      );
+    }
+
+    const constraints = await userRepository.getConstraints(userId);
+    if (!constraints) {
+      throw new HttpError(
+        StatusCode.BAD_REQUEST,
+        "No biometric profile found for this user.",
+      );
+    }
+
+    if (this.inFlight.has(userId)) {
+      throw new HttpError(StatusCode.CONFLICT, "A plan is already being generated.");
+    }
+    this.inFlight.add(userId);
+    try {
+      const result = await geminiService.generateAIPDietPlan(constraints);
+      return await dietRepository.createPlan({
+        date: today,
+        totalCalories: result.totalCalories,
+        totalProtein: result.totalProtein,
+        totalFat: result.totalFats,
+        totalCarbs: result.totalCarbs,
+        userId,
+        diets: {
+          create: result.meals.map((m) => dietHelper.dietFormater(m, today)),
+        },
+      });
+    } finally {
+      this.inFlight.delete(userId);
+    }
   }
 
-  async getDietPlanById(planId: string) {
-    const result = await dietRepository.getDietPlanById(planId);
-    return result || null;
+  async getDietPlanById(planId: string, userId: string) {
+    const plan = await dietRepository.getDietPlanById(planId, userId);
+    if (!plan) throw new HttpError(StatusCode.NOT_FOUND, "Diet plan not found.");
+    return plan;
   }
 
-  async dietResponse(userId: string) {
-    const response = await dietRepository.dietPlan(userId);
-    return response;
+  getLatestDietPlan(userId: string) {
+    return dietRepository.getLatestDietPlan(userId);
   }
 
-  async getLatestDietPlan(userId: string) {
-    const plan = await dietRepository.getLatestDietPlan(userId);
-    return plan || null;
+  getDietPlanHistory(userId: string) {
+    return dietRepository.getDietPlanHistory(userId);
   }
-
-  async getDietPlanHistory(userId: string) {
-    const plan = await dietRepository.getDietPlanHistory(userId);
-    return plan || null;
-  }
-
 }
 
 export const dietService = new DietService();
