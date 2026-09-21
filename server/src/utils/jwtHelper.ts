@@ -7,10 +7,12 @@ const refreshSecret = config.REFRESH_TOKEN_SECRET;
 
 class JWT {
   accessTokenGenerator(id: string) {
-    return jwt.sign({ id }, accessSecret as string, { expiresIn: "30m" });
+    const jti = crypto.randomUUID();
+    return jwt.sign({ id, jti }, accessSecret as string, { expiresIn: "30m" });
   }
   refreshTokenGenerator(id: string) {
-    return jwt.sign({ id }, refreshSecret as string, { expiresIn: "7d" });
+    const jti = crypto.randomUUID();
+    return jwt.sign({ id, jti }, refreshSecret as string, { expiresIn: "7d" });
   }
   refreshVerifier(token: string) {
     return jwt.verify(token, refreshSecret as string);

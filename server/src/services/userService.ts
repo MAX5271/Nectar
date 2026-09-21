@@ -1,12 +1,18 @@
 import { userRepository } from "../repository/userRepository.js";
 import { authRepository } from "../repository/authRepository.js";
+import { sessionRepository } from "../repository/sessionRepository.js";
 import { jwtHelper } from "../utils/jwtHelper.js";
 import { HttpError } from "../utils/httpError.js";
 import StatusCode from "../utils/statusCodes.js";
 import type { SignUpInput } from "../utils/validation.js";
 
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 class UserService {
-  async signUp(data: SignUpInput) {
+  async signUp(
+    data: SignUpInput,
+    meta?: { userAgent?: string | undefined; ipAddress?: string | undefined },
+  ) {
     let user;
     try {
       user = await userRepository.createUserWithConstraints(data);
@@ -18,10 +24,19 @@ class UserService {
     }
     const accessToken = jwtHelper.accessTokenGenerator(user.id);
     const refreshToken = jwtHelper.refreshTokenGenerator(user.id);
-    await authRepository.updateRefreshToken(
-      user.id,
-      jwtHelper.hashToken(refreshToken),
-    );
+    const hashed = jwtHelper.hashToken(refreshToken);
+
+    await authRepository.updateRefreshToken(user.id, hashed);
+
+    const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+    await sessionRepository.createSession({
+      userId: user.id,
+      refreshToken: hashed,
+      expiresAt,
+      userAgent: meta?.userAgent,
+      ipAddress: meta?.ipAddress,
+    });
+
     return { id: user.id, username: user.username, email: user.email, accessToken, refreshToken };
   }
 

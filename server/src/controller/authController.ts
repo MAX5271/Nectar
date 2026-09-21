@@ -12,8 +12,11 @@ import {
 class AuthController {
   async login(req: Request, res: Response): Promise<void> {
     const { email, password } = loginSchema.parse(req.body);
+    const userAgent = req.headers["user-agent"];
+    const ipAddress = req.ip || req.socket.remoteAddress;
+
     const { accessToken, refreshToken, username, id } =
-      await authService.login({ email, password });
+      await authService.login({ email, password, userAgent, ipAddress });
 
     res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions);
     res.status(StatusCode.SUCCESS).json({
@@ -29,7 +32,17 @@ class AuthController {
       throw new HttpError(StatusCode.UNAUTHORIZED, "Refresh token not found");
     }
     const result = await authService.refreshToken(token);
-    res.json({ success: true, ...result });
+
+    // Rotate refresh token cookie
+    if (result.refreshToken) {
+      res.cookie(REFRESH_COOKIE, result.refreshToken, refreshCookieOptions);
+    }
+
+    res.json({
+      success: true,
+      username: result.username,
+      accessToken: result.accessToken,
+    });
   }
 
   async logout(req: Request, res: Response): Promise<void> {
@@ -40,6 +53,26 @@ class AuthController {
       message: "User successfully logged out",
     });
   }
+
+  async getSessions(req: Request, res: Response): Promise<void> {
+    const userId = req.id as string;
+    const sessions = await authService.getSessions(userId);
+    res.status(StatusCode.SUCCESS).json({
+      success: true,
+      data: sessions,
+    });
+  }
+
+  async revokeSession(req: Request, res: Response): Promise<void> {
+    const userId = req.id as string;
+    const sessionId = req.params.id as string;
+    await authService.revokeSession(userId, sessionId);
+    res.status(StatusCode.SUCCESS).json({
+      success: true,
+      message: "Session successfully revoked",
+    });
+  }
 }
 
 export const authController = new AuthController();
+

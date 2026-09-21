@@ -5,6 +5,11 @@ import { HttpError } from "../utils/httpError.js";
 import { geminiStubEnabled, stubMeals } from "./geminiStub.js";
 import { config } from "../config.js";
 import { logger } from "../utils/logger.js";
+import {
+  validateCaloricSafety,
+  verifyAllergySafety,
+} from "../utils/safetyGuardrails.js";
+import StatusCode from "../utils/statusCodes.js";
 
 const genAI = new GoogleGenerativeAI(config.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
@@ -94,6 +99,26 @@ class GeminiService {
     if (!Number.isFinite(target) || target <= 0) {
       throw new Error(`Failed to calculate valid calories. BMR: ${bmr}`);
     }
+
+    const kg = req.unitSystem === "METRIC" ? req.weight : req.weight * 0.4536;
+    const cm = req.unitSystem === "METRIC" ? req.height : req.height * 2.54;
+    const safety = validateCaloricSafety({
+      weightKg: kg,
+      heightCm: cm,
+      age: req.age,
+      bmr,
+      targetCalories: target,
+      goal: req.planType,
+    });
+
+    if (!safety.allowed) {
+      throw new HttpError(StatusCode.BAD_REQUEST, safety.error!);
+    }
+
+    if (safety.clampedCalories) {
+      return safety.clampedCalories;
+    }
+
     return Math.max(target, BMR_FLOOR_CALORIES);
   }
 
@@ -145,6 +170,21 @@ class GeminiService {
                   .response.text(),
               ),
             ).meals;
+
+        // Deterministic post-generation allergy verification
+        const allergyCheck = verifyAllergySafety(
+          meals.map((m) => ({ meal: m.foodName, portion: m.portion })),
+          req.preferences,
+        );
+        if (!allergyCheck.safe) {
+          const firstViolation = allergyCheck.violations[0];
+          const mealName = firstViolation?.mealName ?? "meal";
+          const ingredient = firstViolation?.detectedIngredient ?? "allergen";
+          const category = firstViolation?.matchedAllergenCategory ?? "allergy";
+          throw new Error(
+            `Allergy violation: meal "${mealName}" contains forbidden ingredient "${ingredient}" (${category})`,
+          );
+        }
 
         // Totals are computed from the meals; we never trust the model's own sums.
         const sum = (key: "calories" | "protein" | "carbs" | "fat") =>

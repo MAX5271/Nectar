@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
 
+import { config } from "../config.js";
+
 declare global {
   namespace Express {
     interface Request {
@@ -33,7 +35,7 @@ class VerifyJWT {
     try {
       const payload = jwt.verify(
         token,
-        process.env.ACCESS_TOKEN_SECRET!,
+        config.ACCESS_TOKEN_SECRET,
       ) as TokenPayload;
       req.id = payload.id;
       next();

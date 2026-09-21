@@ -7,7 +7,9 @@ import { REFRESH_COOKIE, refreshCookieOptions } from "../utils/cookie.js";
 class UserController {
   async signUp(req: Request, res: Response): Promise<void> {
     const input = signUpSchema.parse(req.body);
-    const result = await userService.signUp(input);
+    const userAgent = req.headers["user-agent"];
+    const ipAddress = req.ip || req.socket.remoteAddress;
+    const result = await userService.signUp(input, { userAgent, ipAddress });
 
     res.cookie(REFRESH_COOKIE, result.refreshToken, refreshCookieOptions);
     res.status(StatusCode.CREATED).json({

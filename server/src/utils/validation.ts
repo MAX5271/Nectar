@@ -8,7 +8,11 @@ export const signUpSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   username: z.string().trim().min(1).max(50),
   password: z.string().min(8, "must be at least 8 characters").max(72),
-  age: z.coerce.number().int().min(10).max(120),
+  age: z.coerce
+    .number()
+    .int()
+    .min(13, "You must be at least 13 years old to use Nectar.")
+    .max(120),
   height: positive(300),
   weight: positive(700),
   gender: z.preprocess(upper, z.nativeEnum(Gender)),
