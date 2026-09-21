@@ -1,0 +1,93 @@
+{
+  "run_id": "20260921T115857Z_local_S6_b6650da_calibration_r01",
+  "run_type": "calibration",
+  "environment": "local",
+  "git": {
+    "commit": "b6650da",
+    "dirty": false,
+    "branch": "detached"
+  },
+  "dataset_id": "D-M",
+  "scenario": "S6",
+  "step_seconds": 20,
+  "best_p95_ms": 56.97463259999998,
+  "capacity_rps": 20,
+  "rule": "scanning up from the step with the lowest p95: the last step before the first that has dropped iterations, 429s, >0.1% unexpected status, or p95 > 2x that lowest p95",
+  "database": {
+    "checksum": "36722fef23aacb64"
+  },
+  "steps": [
+    {
+      "rate": 20,
+      "achieved_rps": 20,
+      "p50": 31.573094500000003,
+      "p95": 56.97463259999998,
+      "p99": 168.30895404999964,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 40,
+      "achieved_rps": 38.3,
+      "p50": 1623.266839,
+      "p95": 2340.2798337999993,
+      "p99": 2438.40049884,
+      "dropped": 36,
+      "errors": 0
+    },
+    {
+      "rate": 80,
+      "achieved_rps": 52.4,
+      "p50": 7212.022331,
+      "p95": 12147.521074999999,
+      "p99": 12282.88173562,
+      "dropped": 554,
+      "errors": 0
+    },
+    {
+      "rate": 160,
+      "achieved_rps": 40.6,
+      "p50": 11970.878494,
+      "p95": 13551.6231468,
+      "p99": 14091.09499194,
+      "dropped": 2388,
+      "errors": 0
+    },
+    {
+      "rate": 320,
+      "achieved_rps": 43,
+      "p50": 11094.9057935,
+      "p95": 14518.442010649998,
+      "p99": 15162.20449454,
+      "dropped": 5541,
+      "errors": 0
+    },
+    {
+      "rate": 640,
+      "achieved_rps": 46.9,
+      "p50": 10652.852252,
+      "p95": 13739.338072600001,
+      "p99": 14530.31375156,
+      "dropped": 11864,
+      "errors": 0
+    },
+    {
+      "rate": 1280,
+      "achieved_rps": 47.5,
+      "p50": 10548.0580065,
+      "p95": 13811.787552749996,
+      "p99": 14638.807919519999,
+      "dropped": 24650,
+      "errors": 0
+    },
+    {
+      "rate": 2560,
+      "achieved_rps": 48,
+      "p50": 10348.173384,
+      "p95": 13889.0303916,
+      "p99": 14804.76674998,
+      "dropped": 50244,
+      "errors": 0
+    }
+  ]
+}

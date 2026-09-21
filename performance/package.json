@@ -1,0 +1,15 @@
+{
+  "name": "nectar-performance",
+  "private": true,
+  "type": "module",
+  "description": "Benchmark harness for NECTAR. See ../docs/PERFORMANCE.md",
+  "scripts": {
+    "perf": "node perf.mjs"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.16.0",
+    "tsx": "^4.19.0"
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "run_id": "20260921T124246Z_local_S2_b6650da-dirty_calibration_r01",
+  "run_type": "calibration",
+  "environment": "local",
+  "git": {
+    "commit": "b6650da",
+    "dirty": true,
+    "branch": "main"
+  },
+  "dataset_id": "D-M",
+  "scenario": "S2",
+  "step_seconds": 20,
+  "best_p95_ms": 53.08323305,
+  "capacity_rps": 60,
+  "rule": "scanning up from the step with the lowest p95: the last step before the first that has dropped iterations, 429s, >0.1% unexpected status, or p95 > 2x that lowest p95",
+  "database": {
+    "checksum": "36722fef23aacb64"
+  },
+  "steps": [
+    {
+      "rate": 5,
+      "achieved_rps": 5,
+      "p50": 53.891072,
+      "p95": 57.88379,
+      "p99": 183.422907,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 10,
+      "achieved_rps": 10.1,
+      "p50": 53.827748,
+      "p95": 56.954954,
+      "p99": 212.670633,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 20,
+      "achieved_rps": 20,
+      "p50": 50.7112565,
+      "p95": 53.08323305,
+      "p99": 55.243631689999994,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 30,
+      "achieved_rps": 30.1,
+      "p50": 51.664317,
+      "p95": 54.76221,
+      "p99": 56.701477,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 40,
+      "achieved_rps": 40,
+      "p50": 51.849104,
+      "p95": 54.34666,
+      "p99": 57.198389,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 60,
+      "achieved_rps": 60,
+      "p50": 55.838717,
+      "p95": 59.931583,
+      "p99": 64.453793,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 80,
+      "achieved_rps": 78.3,
+      "p50": 738.4827345,
+      "p95": 1061.8319689999998,
+      "p99": 1084.6446365,
+      "dropped": 34,
+      "errors": 0
+    },
+    {
+      "rate": 120,
+      "achieved_rps": 94,
+      "p50": 3270.53235,
+      "p95": 5308.621896,
+      "p99": 5332.1946512,
+      "dropped": 520,
+      "errors": 0
+    }
+  ]
+}

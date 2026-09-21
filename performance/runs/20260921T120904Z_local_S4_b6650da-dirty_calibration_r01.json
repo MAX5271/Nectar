@@ -1,0 +1,93 @@
+{
+  "run_id": "20260921T120904Z_local_S4_b6650da-dirty_calibration_r01",
+  "run_type": "calibration",
+  "environment": "local",
+  "git": {
+    "commit": "b6650da",
+    "dirty": true,
+    "branch": "main"
+  },
+  "dataset_id": "D-M",
+  "scenario": "S4",
+  "step_seconds": 20,
+  "best_p95_ms": 0.971285,
+  "capacity_rps": 640,
+  "rule": "scanning up from the step with the lowest p95: the last step before the first that has dropped iterations, 429s, >0.1% unexpected status, or p95 > 2x that lowest p95",
+  "database": {
+    "checksum": "36722fef23aacb64"
+  },
+  "steps": [
+    {
+      "rate": 20,
+      "achieved_rps": 20.1,
+      "p50": 2.111153,
+      "p95": 2.766386,
+      "p99": 5.773089,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 40,
+      "achieved_rps": 40,
+      "p50": 1.882177,
+      "p95": 2.237256,
+      "p99": 3.220168,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 80,
+      "achieved_rps": 80,
+      "p50": 1.5631765,
+      "p95": 2.0565719000000002,
+      "p99": 2.5392604899999998,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 160,
+      "achieved_rps": 160.1,
+      "p50": 1.155774,
+      "p95": 1.732752,
+      "p99": 2.79416,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 320,
+      "achieved_rps": 320.1,
+      "p50": 0.84647,
+      "p95": 1.513557,
+      "p99": 2.574538,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 640,
+      "achieved_rps": 640,
+      "p50": 0.592403,
+      "p95": 0.971285,
+      "p99": 3.123229,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 1280,
+      "achieved_rps": 1280,
+      "p50": 0.717965,
+      "p95": 2.6036858499999993,
+      "p99": 7.353473199999998,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 2560,
+      "achieved_rps": 2552.1,
+      "p50": 0.97326,
+      "p95": 18.734505,
+      "p99": 33.56464539999995,
+      "dropped": 161,
+      "errors": 0
+    }
+  ]
+}

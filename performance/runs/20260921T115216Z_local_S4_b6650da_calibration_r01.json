@@ -1,0 +1,93 @@
+{
+  "run_id": "20260921T115216Z_local_S4_b6650da_calibration_r01",
+  "run_type": "calibration",
+  "environment": "local",
+  "git": {
+    "commit": "b6650da",
+    "dirty": false,
+    "branch": "detached"
+  },
+  "dataset_id": "D-M",
+  "scenario": "S4",
+  "step_seconds": 20,
+  "best_p95_ms": 1.16931,
+  "capacity_rps": 1280,
+  "rule": "scanning up from the step with the lowest p95: the last step before the first that has dropped iterations, 429s, >0.1% unexpected status, or p95 > 2x that lowest p95",
+  "database": {
+    "checksum": "36722fef23aacb64"
+  },
+  "steps": [
+    {
+      "rate": 20,
+      "achieved_rps": 20,
+      "p50": 2.2222020000000002,
+      "p95": 2.8136669,
+      "p99": 6.04841351999997,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 40,
+      "achieved_rps": 40,
+      "p50": 1.944751,
+      "p95": 2.3521,
+      "p99": 3.181531,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 80,
+      "achieved_rps": 80,
+      "p50": 1.643293,
+      "p95": 2.345383,
+      "p99": 3.766749,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 160,
+      "achieved_rps": 160,
+      "p50": 1.2523870000000001,
+      "p95": 2.0284820999999997,
+      "p99": 3.065254669999996,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 320,
+      "achieved_rps": 320.1,
+      "p50": 0.897536,
+      "p95": 1.69469,
+      "p99": 2.955468,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 640,
+      "achieved_rps": 640,
+      "p50": 0.656993,
+      "p95": 1.16931,
+      "p99": 3.042841,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 1280,
+      "achieved_rps": 1280.1,
+      "p50": 0.6486780000000001,
+      "p95": 1.1702001999999996,
+      "p99": 4.593028639999998,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 2560,
+      "achieved_rps": 2546.1,
+      "p50": 1.095945,
+      "p95": 27.69814,
+      "p99": 62.73729400000001,
+      "dropped": 275,
+      "errors": 0
+    }
+  ]
+}

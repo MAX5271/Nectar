@@ -1,0 +1,3 @@
+node_modules
+# fixtures, worktrees, raw scratch output. Run records in runs/ ARE committed.
+work

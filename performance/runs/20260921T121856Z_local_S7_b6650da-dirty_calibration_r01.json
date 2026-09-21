@@ -1,0 +1,93 @@
+{
+  "run_id": "20260921T121856Z_local_S7_b6650da-dirty_calibration_r01",
+  "run_type": "calibration",
+  "environment": "local",
+  "git": {
+    "commit": "b6650da",
+    "dirty": true,
+    "branch": "main"
+  },
+  "dataset_id": "D-M",
+  "scenario": "S7",
+  "step_seconds": 20,
+  "best_p95_ms": 2.8551709999999986,
+  "capacity_rps": 160,
+  "rule": "scanning up from the step with the lowest p95: the last step before the first that has dropped iterations, 429s, >0.1% unexpected status, or p95 > 2x that lowest p95",
+  "database": {
+    "checksum": "36722fef23aacb64"
+  },
+  "steps": [
+    {
+      "rate": 20,
+      "achieved_rps": 20.1,
+      "p50": 2.317765,
+      "p95": 4.030374,
+      "p99": 13.27075,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 40,
+      "achieved_rps": 40,
+      "p50": 2.0776445,
+      "p95": 2.8551709999999986,
+      "p99": 4.962166909999999,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 80,
+      "achieved_rps": 80,
+      "p50": 1.783406,
+      "p95": 2.874637,
+      "p99": 5.036779,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 160,
+      "achieved_rps": 160.1,
+      "p50": 2.707513,
+      "p95": 5.23508,
+      "p99": 8.161706,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 320,
+      "achieved_rps": 320.1,
+      "p50": 2.758908,
+      "p95": 6.139707,
+      "p99": 12.119882,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 640,
+      "achieved_rps": 640,
+      "p50": 2.750999,
+      "p95": 8.242029,
+      "p99": 18.065812,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 1280,
+      "achieved_rps": 1120.9,
+      "p50": 298.8111355,
+      "p95": 431.3692335999999,
+      "p99": 454.55337760999987,
+      "dropped": 3183,
+      "errors": 0
+    },
+    {
+      "rate": 2560,
+      "achieved_rps": 2096.9,
+      "p50": 182.918869,
+      "p95": 231.0601677,
+      "p99": 278.09692006000034,
+      "dropped": 9264,
+      "errors": 0
+    }
+  ]
+}

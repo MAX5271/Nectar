@@ -1,0 +1,154 @@
+{
+  "run_id": "20260921T131454Z_local_S4_b6650da_aa-a_r01",
+  "record_version": 1,
+  "benchmark_version": "0.2.0",
+  "timestamp_utc": "2026-09-21T13:16:19.699Z",
+  "run_type": "aa",
+  "role": "aa-a",
+  "environment": "local",
+  "approval_ref": null,
+  "git": {
+    "commit": "b6650da",
+    "dirty": false,
+    "branch": "detached"
+  },
+  "scenario": {
+    "id": "S4",
+    "executor": "constant-arrival-rate",
+    "target_rate_rps": 640,
+    "rate_fraction_of_capacity": 0.5,
+    "profile": "quick",
+    "ramp_s": 10,
+    "warmup_s": 10,
+    "duration_s": 60,
+    "gemini_mode": "none",
+    "rate_limit_mode": "not present in this revision"
+  },
+  "database": {
+    "engine": "postgres",
+    "version": "18.6 (Debian 18.6-1.pgdg13+2)",
+    "config": {
+      "shared_buffers": "128MB",
+      "fsync": "on",
+      "synchronous_commit": "on",
+      "max_connections": "200",
+      "work_mem": "4MB",
+      "effective_cache_size": "4GB"
+    },
+    "dataset_id": "D-M",
+    "dataset_checksum": "36722fef23aacb64",
+    "counts": {
+      "User": 1000,
+      "DietaryConstraint": 1000,
+      "DietPlan": 30000,
+      "Diet": 150000
+    },
+    "migrations_applied": [
+      "20260302045038_init_nectar_schema",
+      "20260302171900_rename_name_to_username",
+      "20260303060721_added_height_dietaryconstraint",
+      "20260303061809_added_age_and_daily_plans",
+      "20260303074654_added_password_to_user_model",
+      "20260304085500_added_refreshtoken_to_user_model",
+      "20260304093641_changed_refresh_token_to_optional",
+      "20260304144323_added_diet_model",
+      "20260304155606_diet_plan_model_and_its_relations",
+      "20260304173348_added_portion_size_to_diet_model",
+      "20260304203325_changed_preferences_datatype_to_string",
+      "20260305120806_made_password_in_the_user_model_optional"
+    ],
+    "pool_max": 10,
+    "pool_max_note": "pg default; not set by the app",
+    "max_connections_observed": 10,
+    "template": "bench_seed_d_m_baseline"
+  },
+  "runtime": {
+    "os": "Linux 7.0.0-31-generic",
+    "node": "v24.11.1",
+    "k6_image": "grafana/k6@sha256:5221b620a4f874faff6e32ba597aa667c058391fe4898b1c6f6377f062c6cdec",
+    "cpu_model": "11th Gen Intel(R) Core(TM) i5-11400H @ 2.70GHz",
+    "threads_total": 12,
+    "physical_cores": 6,
+    "ram_gb": 15,
+    "cpu_governor": "powersave",
+    "turbo_disabled": false,
+    "ac_power": true,
+    "load_average_before": 0.44,
+    "cpu_pinning": {
+      "db": "1,7",
+      "api": "2,3,8,9",
+      "loadgen": "4,5,10,11"
+    },
+    "uv_threadpool_size": 4,
+    "bcrypt_cost": 10,
+    "pre_run_quiet_gate": {
+      "waited_s": 3,
+      "busiest_cpu_pct": 3,
+      "threshold_pct": 10
+    },
+    "k6_container": "bench-k6-20260921T131454Z_local_S4_b6650da_aa-a_r01"
+  },
+  "result": {
+    "latency_ms": {
+      "p50": 0.6146285,
+      "p90": 0.7100415999999999,
+      "p95": 0.8216434,
+      "p99": 2.0084664500000025,
+      "min": 0.514137,
+      "max": 21.850768
+    },
+    "requests": {
+      "total": 38400,
+      "failed": 0,
+      "unexpected_status_rate": 0,
+      "check_failures": 0,
+      "http_2xx": 38400,
+      "http_4xx": 0,
+      "http_429": 0,
+      "http_5xx": 0,
+      "dropped_iterations": 0,
+      "pool_exhausted": 0
+    },
+    "response_bytes": {
+      "p50": 363,
+      "p95": 368,
+      "max": 370
+    },
+    "throughput_rps": {
+      "offered": 640,
+      "achieved": 640
+    },
+    "db": {
+      "statements_per_request": 2,
+      "window": "entire run incl. ramp+warm-up",
+      "top_statements": [
+        {
+          "query": "SELECT \"public\".\"DietaryConstraint\".\"id\", \"public\".\"DietaryConstraint\".\"planType\"::text, \"public\".\"DietaryConstraint\".\"gender\"::text, \"public\".\"DietaryConstrain",
+          "calls": 48006,
+          "total_ms": 3195.87,
+          "mean_ms": 0.067,
+          "rows": 48006
+        },
+        {
+          "query": "SELECT \"public\".\"User\".\"id\", \"public\".\"User\".\"username\", \"public\".\"User\".\"email\" FROM \"public\".\"User\" WHERE (\"public\".\"User\".\"id\" = $1 AND $4=$5) LIMIT $2 OFFSE",
+          "calls": 48006,
+          "total_ms": 316.26,
+          "mean_ms": 0.007,
+          "rows": 48006
+        }
+      ]
+    },
+    "infra": {
+      "api_cpu_pct_of_one_core": 25.1,
+      "api_rss_peak_mb": 301,
+      "db_cpu_pct_avg": 12.869999999999997,
+      "db_cpu_pct_max": 14.03,
+      "loadgen_cpu_pct_of_allotment": 4.5
+    }
+  },
+  "validity": {
+    "valid": true,
+    "violations": []
+  },
+  "raw_output_path": "performance/runs/20260921T131454Z_local_S4_b6650da_aa-a_r01.k6.json"
+}

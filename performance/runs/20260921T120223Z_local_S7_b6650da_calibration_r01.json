@@ -1,0 +1,93 @@
+{
+  "run_id": "20260921T120223Z_local_S7_b6650da_calibration_r01",
+  "run_type": "calibration",
+  "environment": "local",
+  "git": {
+    "commit": "b6650da",
+    "dirty": false,
+    "branch": "detached"
+  },
+  "dataset_id": "D-M",
+  "scenario": "S7",
+  "step_seconds": 20,
+  "best_p95_ms": 16.943772,
+  "capacity_rps": 40,
+  "rule": "scanning up from the step with the lowest p95: the last step before the first that has dropped iterations, 429s, >0.1% unexpected status, or p95 > 2x that lowest p95",
+  "database": {
+    "checksum": "36722fef23aacb64"
+  },
+  "steps": [
+    {
+      "rate": 20,
+      "achieved_rps": 20,
+      "p50": 16.534125,
+      "p95": 18.214134049999995,
+      "p99": 67.46160876999961,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 40,
+      "achieved_rps": 40,
+      "p50": 15.846856,
+      "p95": 16.943772,
+      "p99": 17.68692,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 80,
+      "achieved_rps": 80,
+      "p50": 71.817236,
+      "p95": 93.760818,
+      "p99": 102.762561,
+      "dropped": 0,
+      "errors": 0
+    },
+    {
+      "rate": 160,
+      "achieved_rps": 109.7,
+      "p50": 3663.6144245,
+      "p95": 4454.0291053,
+      "p99": 4484.2876934900005,
+      "dropped": 1007,
+      "errors": 0
+    },
+    {
+      "rate": 320,
+      "achieved_rps": 103.3,
+      "p50": 4795.088371,
+      "p95": 4883.33826,
+      "p99": 4937.04967285,
+      "dropped": 4335,
+      "errors": 0
+    },
+    {
+      "rate": 640,
+      "achieved_rps": 101.8,
+      "p50": 4836.191718,
+      "p95": 4939.861231399999,
+      "p99": 4972.559985,
+      "dropped": 10763,
+      "errors": 0
+    },
+    {
+      "rate": 1280,
+      "achieved_rps": 100.4,
+      "p50": 4954.4257095,
+      "p95": 5041.0628076,
+      "p99": 5075.124637710001,
+      "dropped": 23593,
+      "errors": 0
+    },
+    {
+      "rate": 2560,
+      "achieved_rps": 98.6,
+      "p50": 5036.8705979999995,
+      "p95": 5159.6601531,
+      "p99": 5197.44562515,
+      "dropped": 49231,
+      "errors": 0
+    }
+  ]
+}
