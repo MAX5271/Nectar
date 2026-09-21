@@ -1,24 +1,28 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 export interface UserConstraint {
-  id: string;
+  id?: string;
   planType: string;
   gender: string;
   unitSystem: string;
+  activityLevel?: string;
   height: number;
   weight: number;
   age: number;
   preferences: string;
-  userId: string;
+  userId?: string;
+}
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  email: string;
+  constraint?: UserConstraint;
+  constraints?: UserConstraint[];
 }
 
 interface AuthState {
-  user: {
-    id: string;
-    username: string;
-    email: string;
-    constraints?: UserConstraint[];
-  } | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   token: string | null;
 }

@@ -1,29 +1,10 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { logout } from './authSlice';
 
-export interface DietMeal {
-  id: string;
-  type: string;
-  portion: string;
-  meal: string;
-  calories: number;
-  carb: number;
-  protein: number;
-  fat: number;
-  date: string;
-  dietPlanId: string;
-}
+import type { DietMealDTO, DietPlanDTO } from '@nectar/types';
 
-export interface DietPlan {
-  id: string;
-  date: string;
-  totalCalories: number;
-  totalProtein: number;
-  totalFat: number;
-  totalCarbs: number;
-  userId: string;
-  diets?: DietMeal[]; 
-}
+export type DietMeal = DietMealDTO;
+export type DietPlan = DietPlanDTO;
 
 interface DietState {
   latestPlan: DietPlan | null;

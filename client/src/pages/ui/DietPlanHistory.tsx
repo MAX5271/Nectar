@@ -36,7 +36,7 @@ const DietPlanHistory: React.FC = () => {
     }
   }, [dispatch, isAuthenticated]);
 
-  const formatArchiveDate = (isoString: string) => {
+  const formatArchiveDate = (isoString: string | Date) => {
     const date = new Date(isoString);
     return date.toLocaleDateString('en-US', { 
       weekday: 'long', 

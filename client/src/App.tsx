@@ -2,7 +2,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import Home from "./pages/ui/HomePage"
 import AppLayout from "./pages/ui/AppLayout";
-import Error404 from "./pages/ui/Error404";
 import Login from "./pages/auth/LoginPage";
 import About from "./pages/ui/About";
 import Register from "./pages/auth/Register";
@@ -12,11 +11,13 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 
 
+import { RouteErrorBoundary } from "./components/common/RouteErrorBoundary";
+
 const router = createBrowserRouter([
   {
-    element:<AppLayout/>,
-    errorElement:<Error404/>,
-    children:[
+    element: <AppLayout />,
+    errorElement: <RouteErrorBoundary />,
+    children: [
       {
         path:'/',
         element:<Home/>
