@@ -3,8 +3,10 @@ import { Gender, PlanType, UnitSystem } from "@prisma/client";
 import { z } from "zod";
 import { HttpError } from "../utils/httpError.js";
 import { geminiStubEnabled, stubMeals } from "./geminiStub.js";
+import { config } from "../config.js";
+import { logger } from "../utils/logger.js";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const genAI = new GoogleGenerativeAI(config.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
   model: "gemini-2.5-flash",
   generationConfig: {
@@ -13,7 +15,7 @@ const model = genAI.getGenerativeModel({
   },
 });
 
-interface DietPlanReq {
+export interface DietPlanReq {
   weight: number;
   height: number;
   age: number;
@@ -24,7 +26,7 @@ interface DietPlanReq {
 }
 
 const macro = z.coerce.number().finite().nonnegative();
-const aiPlanSchema = z.object({
+export const aiPlanSchema = z.object({
   meals: z
     .array(
       z.object({
@@ -40,13 +42,13 @@ const aiPlanSchema = z.object({
     .length(5),
 });
 
-const BMR_FLOOR_CALORIES = 1200;
+export const BMR_FLOOR_CALORIES = 1200;
 const ACTIVITY_MULTIPLIER = 1.2;
 const MAX_ATTEMPTS = 2;
 const CALORIE_TOLERANCE = 0.1;
 const REQUEST_TIMEOUT_MS = 30_000;
 
-const GOAL_MODIFIER: Record<PlanType, number> = {
+export const GOAL_MODIFIER: Record<PlanType, number> = {
   CUTTING: -500,
   BULKING: 300,
   RECOMP: 0,
@@ -62,7 +64,7 @@ const CREATIVE_CONSTRAINTS = [
 ];
 
 // Mifflin-St Jeor. Imperial: weight in lb, height in inches.
-function calculateBmr(
+export function calculateBmr(
   { weight, height, age, gender, unitSystem }: DietPlanReq,
 ): number {
   const kg = unitSystem === "METRIC" ? weight : weight * 0.4536;
@@ -74,7 +76,7 @@ function calculateBmr(
 
 // Preferences are free text from the user and end up inside the prompt:
 // flatten it, cap it, and strip quote/brace characters so it stays plain data.
-function sanitizePreferences(raw: string): string {
+export function sanitizePreferences(raw: string): string {
   const cleaned = String(raw ?? "")
     .replace(/[\r\n\t]+/g, " ")
     .replace(/["`{}<>\\]/g, "")
@@ -165,10 +167,10 @@ class GeminiService {
         };
       } catch (e) {
         lastError = e;
-        console.error(`[GEMINI] Attempt ${attempt}/${MAX_ATTEMPTS} failed:`, e);
+        logger.error({ err: e, attempt, maxAttempts: MAX_ATTEMPTS }, "Gemini generation attempt failed");
       }
     }
-    console.error("[GEMINI] Giving up:", lastError);
+    logger.error({ err: lastError }, "Gemini generation failed after max attempts");
     throw new HttpError(502, "Could not generate a valid diet plan. Please try again.");
   }
 }
