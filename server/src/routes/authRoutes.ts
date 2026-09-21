@@ -2,11 +2,16 @@ import { Router } from "express";
 import { authController } from "../controller/authController.js";
 import { verifyJWT } from "../middleware/verifyJWT.js";
 
+import { refreshLimiter } from "../middleware/rateLimiters.js";
+
 const router = Router();
 
 router.post("/login", authController.login);
 // Refresh/logout authenticate via the HttpOnly refresh cookie, not the access token.
-router.get("/refresh", authController.refresh);
+// Primary standard endpoint: POST /api/auth/refresh (RFC-compliant state-changing refresh)
+router.post("/refresh", refreshLimiter, authController.refresh);
+// Compatibility fallback: preserves GET for legacy clients & untouched benchmark scenario S3
+router.get("/refresh", refreshLimiter, authController.refresh);
 router.post("/logout", authController.logout);
 
 // Session management
