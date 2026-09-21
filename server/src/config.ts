@@ -23,6 +23,8 @@ const envSchema = z.object({
     .min(32, "REFRESH_TOKEN_SECRET must be at least 32 characters"),
   GEMINI_MODE: z.enum(["live", "stub"]).default("live"),
   GEMINI_STUB_DELAY_MS: z.coerce.number().default(0),
+  SWAP_LIMIT_PER_HOUR: z.coerce.number().default(20),
+  REFRESH_LIMIT_PER_15M: z.coerce.number().default(60),
   RATE_LIMIT_DISABLED: z
     .enum(["true", "false"])
     .default("false")
