@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import api from '../../services/api';
 import axios from 'axios';
 import { useAppDispatch } from '../../hooks/reduxHooks';
-import { setCredentials, type AuthUser } from '../../store/slices/authSlice';
+import { updateUser, type AuthUser } from '../../store/slices/authSlice';
 
 interface ProfileEditModalProps {
   user: AuthUser;
@@ -47,12 +47,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
       });
 
       if (res.data.success && res.data.data) {
-        dispatch(
-          setCredentials({
-            user: res.data.data,
-            token: localStorage.getItem('token') || '',
-          }),
-        );
+        dispatch(updateUser(res.data.data));
         onUpdated?.();
         onClose();
       }

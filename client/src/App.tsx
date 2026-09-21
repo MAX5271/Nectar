@@ -1,4 +1,5 @@
 
+import { useEffect } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import Home from "./pages/ui/HomePage"
 import AppLayout from "./pages/ui/AppLayout";
@@ -8,10 +9,9 @@ import Register from "./pages/auth/Register";
 import Dashboard from "./pages/ui/Dashboard";
 import DietPlanHistory from "./pages/ui/DietPlanHistory";
 import ProtectedRoute from "./components/ProtectedRoute";
-
-
-
 import { RouteErrorBoundary } from "./components/common/RouteErrorBoundary";
+import { useAppDispatch, useAppSelector } from "./hooks/reduxHooks";
+import { initAuthSession } from "./services/authFlow";
 
 const router = createBrowserRouter([
   {
@@ -52,6 +52,15 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
+  const dispatch = useAppDispatch();
+  const isInitialized = useAppSelector((state) => state.auth.isInitialized);
+
+  useEffect(() => {
+    if (!isInitialized) {
+      initAuthSession(dispatch);
+    }
+  }, [dispatch, isInitialized]);
+
   return (
     <RouterProvider router={router}/>
   )

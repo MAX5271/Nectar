@@ -33,9 +33,15 @@ let refreshPromise: Promise<string> | null = null;
 const refreshAccessToken = (): Promise<string> => {
   if (!refreshPromise) {
     // bare axios (not `api`) so this call can't recurse through the interceptor.
-    // withCredentials is required for the browser to send the HttpOnly cookie.
     refreshPromise = axios
-      .get(`${baseURL}/auth/refresh`, { withCredentials: true })
+      .post(
+        `${baseURL}/auth/refresh`,
+        {},
+        {
+          withCredentials: true,
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        },
+      )
       .then((res) => res.data.accessToken as string)
       .finally(() => {
         refreshPromise = null;
