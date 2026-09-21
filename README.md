@@ -1,6 +1,6 @@
-# 🍯 NECTAR Backend
+# 🍯 NECTAR
 
-NECTAR is a personalized, AI-driven diet planner application. This repository houses the Node.js/TypeScript backend, which handles precise server-side metabolic calculations and interfaces with Google's Gemini AI to generate customized daily meal plans.
+NECTAR is a personalized, AI-driven diet planner application. This monorepo has a React client (`client/`) and a Node.js/TypeScript API (`server/`), which handles precise server-side metabolic calculations and interfaces with Google's Gemini AI to generate customized daily meal plans.
 
 ## 🚀 Tech Stack
 
@@ -23,13 +23,13 @@ NECTAR is a personalized, AI-driven diet planner application. This repository ho
 
 ### 1. Install Dependencies
 ```bash
-npm install
-
+(cd server && npm install)
+(cd client && npm install)
 ```
 
 ### 2. Environment Variables
 
-Create a `.env` file in the root of the `server` directory:
+Copy `server/.env.example` to `server/.env` and fill it in (and `client/.env.example` to `client/.env` if the API isn't on localhost:5000):
 
 ```env
 DATABASE_URL="your_supabase_postgresql_connection_string"
@@ -49,11 +49,11 @@ npx prisma generate
 
 ```
 
-### 4. Running the Test Script
-
-Test the AI generation and BMR calculations directly from the terminal, bypassing the API routes:
+### 4. Run
 
 ```bash
-npx tsx --env-file=.env src/test.ts
-
+(cd server && npm run dev)   # API on :5000
+(cd client && npm run dev)   # app on :5173
 ```
+
+To exercise the AI generation and BMR calculation without HTTP: `cd server && npm run test:gemini`.
