@@ -14,9 +14,17 @@ import { config } from "./config.js";
 
 export const app = express();
 
-const allowedOrigins = [config.CLIENT_URL, "http://localhost:5173"].filter(
-  Boolean,
-) as string[];
+export function getAllowedOrigins(
+  env = config.NODE_ENV,
+  clientUrl = config.CLIENT_URL,
+): string[] {
+  if (env === "production") {
+    return clientUrl ? [clientUrl] : [];
+  }
+  return [clientUrl, "http://localhost:5173"].filter(Boolean) as string[];
+}
+
+export const allowedOrigins = getAllowedOrigins();
 
 if (config.NODE_ENV === "production") app.set("trust proxy", 1);
 
