@@ -1,11 +1,8 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js" // Changed from "prisma-client"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -29,38 +26,48 @@ enum UnitSystem {
   IMPERIAL
 }
 
-// 2. Define the main data table
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+// 2. Define the main data tables
 model DietaryConstraint {
   id          String     @id @default(uuid())
   planType    PlanType
   gender      Gender
   unitSystem  UnitSystem
-  height      Float // Use Float for decimals (e.g., 175.5 cm)
+  height      Float
   weight      Float
   age         Int
-  preferences String // A string for things like "Vegan", "No Nuts"
+  preferences String
 
-  // Link back to the User
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  // Strict 1-to-1 link back to User
+  userId      String     @unique
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
 model Diet {
-  id       String   @id @default(uuid())
-  type     String
-  portion  String
-  meal     String
-  calories Float
-  carb     Float
-  protein  Float
-  fat      Float
-  date     DateTime
+  id         String   @id @default(uuid())
+  mealType   MealType @default(BREAKFAST)
+  portion    String
+  meal       String
+  calories   Float
+  carb       Float
+  protein    Float
+  fat        Float
 
-  //Link back to DietPlan
+  // Link back to DietPlan
   dietPlanId String
-  dietPlan   DietPlan @relation(fields: [dietPlanId], references: [id])
+  dietPlan   DietPlan @relation(fields: [dietPlanId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([dietPlanId])
 }
@@ -74,19 +81,95 @@ model DietPlan {
   totalFat      Float
   totalCarbs    Float
 
-  //Link back to the User
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  // Link back to the User
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model WeightEntry {
+  id        String   @id @default(uuid())
+  weight    Float
+  date      DateTime @default(now())
+  note      String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, date])
 }
 
+model MealLog {
+  id         String   @id @default(uuid())
+  date       DateTime
+  mealType   MealType
+  name       String
+  calories   Float
+  protein    Float
+  carbs      Float
+  fat        Float
+  adhered    Boolean  @default(true)
+  dietPlanId String?
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, date])
+}
+
+model Measurement {
+  id        String   @id @default(uuid())
+  date      DateTime @default(now())
+  chest     Float?
+  waist     Float?
+  hips      Float?
+  arms      Float?
+  thighs    Float?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
+}
+
+model MealFeedback {
+  id        String   @id @default(uuid())
+  foodName  String
+  rating    Int
+  reason    String?
+  isBlocked Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, foodName])
+}
+
 model User {
-  id           String              @id @default(uuid())
-  email        String              @unique
-  username     String?
-  password     String?
-  refreshToken String?
-  constraints  DietaryConstraint[]
-  dietPlan     DietPlan[]
+  id            String             @id @default(uuid())
+  email         String             @unique
+  username      String?
+  password      String?
+  refreshToken  String?
+  constraint    DietaryConstraint?
+  dietPlan      DietPlan[]
+  weightEntries WeightEntry[]
+  mealLogs      MealLog[]
+  measurements  Measurement[]
+  mealFeedbacks MealFeedback[]
+
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 }

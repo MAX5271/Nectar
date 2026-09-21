@@ -14,16 +14,21 @@ class UserRepository {
         email,
         username,
         password: await bcrypt.hash(password, 10),
-        constraints: { create: { ...biometrics, preferences } },
+        constraint: { create: { ...biometrics, preferences } },
       },
     });
   }
 
   async getUserProfile(userId: string) {
-    return await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, username: true, email: true, constraints: true },
+      select: { id: true, username: true, email: true, constraint: true },
     });
+    if (!user) return null;
+    return {
+      ...user,
+      constraints: user.constraint ? [user.constraint] : [], // backwards compatibility with client
+    };
   }
 
   async findById(id: string) {
@@ -31,7 +36,7 @@ class UserRepository {
   }
 
   async getConstraints(userId: string) {
-    return await prisma.dietaryConstraint.findFirst({ where: { userId } });
+    return await prisma.dietaryConstraint.findUnique({ where: { userId } });
   }
 }
 

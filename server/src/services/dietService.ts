@@ -6,9 +6,6 @@ import { HttpError } from "../utils/httpError.js";
 import StatusCode from "../utils/statusCodes.js";
 
 class DietService {
-  // Guards against double-clicks / parallel requests for the same user.
-  private inFlight = new Set<string>();
-
   async generateDailyPlan(userId: string) {
     const today = dietHelper.todayUTC();
 
@@ -27,26 +24,18 @@ class DietService {
       );
     }
 
-    if (this.inFlight.has(userId)) {
-      throw new HttpError(StatusCode.CONFLICT, "A plan is already being generated.");
-    }
-    this.inFlight.add(userId);
-    try {
-      const result = await geminiService.generateAIPDietPlan(constraints);
-      return await dietRepository.createPlan({
-        date: today,
-        totalCalories: result.totalCalories,
-        totalProtein: result.totalProtein,
-        totalFat: result.totalFats,
-        totalCarbs: result.totalCarbs,
-        userId,
-        diets: {
-          create: result.meals.map((m) => dietHelper.dietFormater(m, today)),
-        },
-      });
-    } finally {
-      this.inFlight.delete(userId);
-    }
+    const result = await geminiService.generateAIPDietPlan(constraints);
+    return await dietRepository.createPlan({
+      date: today,
+      totalCalories: result.totalCalories,
+      totalProtein: result.totalProtein,
+      totalFat: result.totalFats,
+      totalCarbs: result.totalCarbs,
+      userId,
+      diets: {
+        create: result.meals.map((m) => dietHelper.dietFormater(m)),
+      },
+    });
   }
 
   async getDietPlanById(planId: string, userId: string) {

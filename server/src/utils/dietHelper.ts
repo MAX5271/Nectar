@@ -1,3 +1,5 @@
+import { MealType } from "@prisma/client";
+
 export interface MealInput {
   mealType: string;
   foodName: string;
@@ -17,19 +19,28 @@ class DietHelper {
     );
   }
 
-  dietFormater(
-    { mealType, foodName, portion, calories, protein, carbs, fat }: MealInput,
-    date: Date,
-  ) {
+  dietFormater({
+    mealType,
+    foodName,
+    portion,
+    calories,
+    protein,
+    carbs,
+    fat,
+  }: MealInput) {
+    const upper = mealType.toUpperCase();
+    const normalizedType: MealType = Object.values(MealType).includes(upper as MealType)
+      ? (upper as MealType)
+      : MealType.BREAKFAST;
+
     return {
-      type: mealType,
+      mealType: normalizedType,
       meal: foodName,
       portion,
       calories: Math.round(calories),
       protein: Math.round(protein),
       carb: Math.round(carbs),
       fat: Math.round(fat),
-      date,
     };
   }
 }

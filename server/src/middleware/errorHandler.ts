@@ -24,11 +24,18 @@ export function errorHandler(
     return;
   }
 
-  // Prisma unique constraint violation (e.g. duplicate email under a race)
+  // Prisma unique constraint violation (e.g. duplicate email or daily plan race)
   if ((error as { code?: string })?.code === "P2002") {
-    res
-      .status(StatusCode.CONFLICT)
-      .json({ success: false, message: "Email already in use." });
+    const target = String(
+      (error as { meta?: { target?: unknown } })?.meta?.target ?? "",
+    );
+    let message = "A conflicting resource already exists.";
+    if (target.includes("email")) {
+      message = "Email already in use.";
+    } else if (target.includes("date") || target.includes("userId")) {
+      message = "You have already generated a plan today.";
+    }
+    res.status(StatusCode.CONFLICT).json({ success: false, message });
     return;
   }
 

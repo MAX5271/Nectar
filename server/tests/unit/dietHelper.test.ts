@@ -11,7 +11,6 @@ describe("dietHelper Utilities", () => {
   });
 
   it("formats meal items and rounds all numeric macros", () => {
-    const date = new Date("2026-09-21T00:00:00.000Z");
     const rawMeal = {
       mealType: "Breakfast",
       foodName: "Oatmeal with Blueberries",
@@ -22,17 +21,16 @@ describe("dietHelper Utilities", () => {
       fat: 6.2,
     };
 
-    const formatted = dietHelper.dietFormater(rawMeal, date);
+    const formatted = dietHelper.dietFormater(rawMeal);
 
     expect(formatted).toEqual({
-      type: "Breakfast",
+      mealType: "BREAKFAST",
       meal: "Oatmeal with Blueberries",
       portion: "1 bowl (250g)",
       calories: 351,
       protein: 12,
       carb: 59,
       fat: 6,
-      date,
     });
   });
 });
