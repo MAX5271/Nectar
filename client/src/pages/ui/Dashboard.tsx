@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../../hooks/reduxHooks';
-import { setLoading, setLatestPlan, clearDietData } from '../../store/slices/dietSlice';
-import { logout } from '../../store/slices/authSlice';
+import { setLoading, setLatestPlan } from '../../store/slices/dietSlice';
 import api from '../../services/api';
+import { endSession } from '../../services/authFlow';
 import { useSmartNavigate } from '../../hooks/useSmartNavigate';
+import axios from 'axios';
 
 const Dashboard: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -11,13 +12,10 @@ const Dashboard: React.FC = () => {
   const { latestPlan, isLoading } = useAppSelector((state) => state.diet);
   const navigate = useSmartNavigate();
 
-  const userConstraints = user?.constraints?.[0];
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-    }
-  }, [user, navigate]);
+  const userConstraints = user?.constraints?.[0];
+  const isMetric = userConstraints?.unitSystem !== 'IMPERIAL';
 
   useEffect(() => {
     const fetchLatestPlan = async () => {
@@ -35,38 +33,41 @@ const Dashboard: React.FC = () => {
     }
   }, [dispatch, user]);
 
-  const isPlanGeneratedToday = () => {
-    if (!latestPlan?.date) return false;
-    const planDate = new Date(latestPlan.date).toDateString();
-    const today = new Date().toDateString();
-    return planDate === today;
-  };
+  // plan dates are stored as UTC midnight, so compare against today's UTC date.
+  const hasGeneratedToday =
+    !!latestPlan?.date &&
+    latestPlan.date.slice(0, 10) === new Date().toISOString().slice(0, 10);
 
-  const hasGeneratedToday = isPlanGeneratedToday();
-
-  const handleLogout = () => {
-    dispatch(clearDietData());
-    dispatch(logout());
+  const handleLogout = async () => {
+    await endSession(dispatch);
     navigate('/login');
   };
 
   const handleGeneratePlan = async () => {
     if (hasGeneratedToday) return;
-    
+
     dispatch(setLoading(true));
+    setError('');
     try {
-      const planResponse = await api.get('/diet/plan');
-      const newPlanId = planResponse.data.result.id;
-      
-      const fullPlanResponse = await api.get(`/diet/${newPlanId}`);
-      dispatch(setLatestPlan(fullPlanResponse.data.result));
-    } catch (error) {
-      console.error('[SYSTEM] Gemini Matrix generation failed.', error);
-      alert('Failed to generate protocol. Check server connection.');
+      const planResponse = await api.post('/diet/plan');
+      dispatch(setLatestPlan(planResponse.data.result));
+    } catch (err) {
+      console.error('[SYSTEM] Gemini Matrix generation failed.', err);
+      setError(
+        axios.isAxiosError(err)
+          ? err.response?.data?.message || 'Failed to generate protocol.'
+          : 'Failed to generate protocol.',
+      );
     } finally {
       dispatch(setLoading(false));
     }
   };
+
+  // share of total calories contributed by each macro (4/4/9 kcal per gram)
+  const macroShare = (grams: number, kcalPerGram: number) =>
+    latestPlan?.totalCalories
+      ? Math.min(100, Math.round((grams * kcalPerGram * 100) / latestPlan.totalCalories))
+      : 0;
 
   return user ? (
     <div className="min-h-screen bg-zinc-950 text-white font-sans p-6 lg:p-12">
@@ -91,7 +92,7 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="block text-[10px] text-zinc-600 uppercase">Height</span>
-                <span className="text-xl font-black">{userConstraints?.height || '---'} CM</span>
+                <span className="text-xl font-black">{userConstraints?.height || '---'} {isMetric ? 'CM' : 'IN'}</span>
               </div>
               <div>
                 <span className="block text-[10px] text-zinc-600 uppercase">Phase</span>
@@ -99,7 +100,7 @@ const Dashboard: React.FC = () => {
               </div>
               <div>
                 <span className="block text-[10px] text-zinc-600 uppercase">Current Mass</span>
-                <span className="text-xl font-black">{userConstraints?.weight || '---'} KG</span>
+                <span className="text-xl font-black">{userConstraints?.weight || '---'} {isMetric ? 'KG' : 'LB'}</span>
               </div>
             </div>
           </div>
@@ -114,8 +115,11 @@ const Dashboard: React.FC = () => {
                   ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed border-2 border-zinc-800' 
                   : 'bg-red-600 text-black hover:-translate-y-1 hover:bg-red-500 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-0 active:shadow-none'}`}
             >
-              {isLoading ? 'Compiling...' : hasGeneratedToday ? 'Protocol Locked (24H)' : 'Initialize Protocol'}
+              {isLoading ? 'Compiling...' : hasGeneratedToday ? 'Protocol Locked (Today)' : 'Initialize Protocol'}
             </button>
+            {error && (
+              <p role="alert" className="mt-4 text-xs font-bold uppercase tracking-widest text-red-500">{error}</p>
+            )}
           </div>
 
           {latestPlan && (
@@ -137,7 +141,7 @@ const Dashboard: React.FC = () => {
                     <span className="text-white">{latestPlan.totalProtein}g</span>
                   </div>
                   <div className="h-1 bg-zinc-900 w-full">
-                    <div className="h-full bg-blue-500 w-full" style={{ width: '100%' }}></div>
+                    <div className="h-full bg-blue-500" style={{ width: `${macroShare(latestPlan.totalProtein, 4)}%` }}></div>
                   </div>
                 </div>
                 <div>
@@ -146,7 +150,7 @@ const Dashboard: React.FC = () => {
                     <span className="text-white">{latestPlan.totalCarbs}g</span>
                   </div>
                   <div className="h-1 bg-zinc-900 w-full">
-                    <div className="h-full bg-yellow-500 w-full" style={{ width: '100%' }}></div>
+                    <div className="h-full bg-yellow-500" style={{ width: `${macroShare(latestPlan.totalCarbs, 4)}%` }}></div>
                   </div>
                 </div>
                 <div>
@@ -155,7 +159,7 @@ const Dashboard: React.FC = () => {
                     <span className="text-white">{latestPlan.totalFat}g</span>
                   </div>
                   <div className="h-1 bg-zinc-900 w-full">
-                    <div className="h-full bg-orange-500 w-full" style={{ width: '100%' }}></div>
+                    <div className="h-full bg-orange-500" style={{ width: `${macroShare(latestPlan.totalFat, 9)}%` }}></div>
                   </div>
                 </div>
               </div>

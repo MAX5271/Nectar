@@ -8,6 +8,7 @@ import About from "./pages/ui/About";
 import Register from "./pages/auth/Register";
 import Dashboard from "./pages/ui/Dashboard";
 import DietPlanHistory from "./pages/ui/DietPlanHistory";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 
 
@@ -33,12 +34,17 @@ const router = createBrowserRouter([
         element: <Register/>
       },
       {
-        path:'/dashboard',
-        element: <Dashboard/>
-      },
-      {
-        path: 'diet-history',
-        element: <DietPlanHistory/>
+        element: <ProtectedRoute/>,
+        children:[
+          {
+            path:'/dashboard',
+            element: <Dashboard/>
+          },
+          {
+            path: '/diet-history',
+            element: <DietPlanHistory/>
+          }
+        ]
       }
     ]
   }

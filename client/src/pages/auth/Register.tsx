@@ -6,7 +6,7 @@ import Step3Protocol from '../../components/onboarding/Step3Protocol';
 import { useSmartNavigate } from '../../hooks/useSmartNavigate';
 import api from '../../services/api';
 import { useAppDispatch } from '../../hooks/reduxHooks';
-import { setCredentials } from '../../store/slices/authSlice';
+import { completeAuth } from '../../services/authFlow';
 import axios from 'axios';
 
 const emptyPayload: NectarPayload = {
@@ -64,29 +64,15 @@ const Register: React.FC = () => {
       return;
     }
     setIsSubmitting(true);
-    // console.log('[SYSTEM] Executing payload sequence:', payload);
     
     try {
       const response = await api.post('/user/signup', payload);
-      sessionStorage.removeItem('nectar_step');
-      sessionStorage.removeItem('nectar_payload');
-      
+
       if (response.data.success && response.data.data.accessToken) {
-        const { accessToken } = response.data.data;
+        sessionStorage.removeItem('nectar_step');
+        sessionStorage.removeItem('nectar_payload');
 
-        const profileResponse = await api.get('/user/profile', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        });
-
-        const userData = profileResponse.data.data;
-
-        dispatch(setCredentials({
-          user: userData,
-          token: accessToken,
-        }));
-        
+        await completeAuth(dispatch, response.data.data.accessToken);
         navigate('/dashboard');
       }
     } catch (error) {

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSmartNavigate } from '../../hooks/useSmartNavigate';
 import api from '../../services/api';
+import { completeAuth } from '../../services/authFlow';
 import { useAppDispatch, useAppSelector } from '../../hooks/reduxHooks';
-import { setCredentials } from '../../store/slices/authSlice';
 import axios from 'axios';
 
 const Login: React.FC = () => {
@@ -10,13 +10,15 @@ const Login: React.FC = () => {
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
 
-  if(isAuthenticated){
-    navigate('/dashboard');
-  }
+  useEffect(() => {
+    if (isAuthenticated) navigate('/dashboard');
+  }, [isAuthenticated, navigate]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const handleReset = () => {
     setPassword('');
@@ -25,39 +27,21 @@ const Login: React.FC = () => {
   const handleLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault(); 
     setIsLoading(true);
-    console.log('[SYSTEM] Initiating authorization sequence...');
+    setError('');
 
     try {
       const authResponse = await api.post('/auth/login', { email, password });
 
       if (authResponse.data.success && authResponse.data.data.accessToken) {
-        const { accessToken } = authResponse.data.data;
-
-        const profileResponse = await api.get('/user/profile', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        });
-
-        const userData = profileResponse.data.data;
-
-        dispatch(setCredentials({
-          user: userData,
-          token: accessToken
-        }));
-
-        console.log('[SYSTEM] Authorization successful.');
+        await completeAuth(dispatch, authResponse.data.data.accessToken);
         navigate('/dashboard');
       }
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data?.message || "Invalid credentials.";
-        console.error("[SYSTEM] Authorization failed:", errorMessage);
-        alert(`Error: ${errorMessage}`);
-      } else {
-        console.error("[SYSTEM] Critical internal failure:", error);
-        alert("A critical system error occurred.");
-      }
+    } catch (err) {
+      setError(
+        axios.isAxiosError(err)
+          ? err.response?.data?.message || 'Invalid credentials.'
+          : 'A critical system error occurred.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -77,6 +61,11 @@ const Login: React.FC = () => {
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-6">
+          {error && (
+            <p role="alert" className="border-2 border-red-600 bg-red-950 px-4 py-3 text-xs font-bold uppercase tracking-widest text-red-400">
+              {error}
+            </p>
+          )}
           <div className="flex flex-col gap-2">
             <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-zinc-500">
               Identification
@@ -110,7 +99,7 @@ const Login: React.FC = () => {
                   onClick={handleReset} 
                   className="cursor-pointer text-[10px] font-bold uppercase tracking-widest text-red-600 transition-colors hover:text-white focus:outline-none"
                 >
-                  Reset
+                  Clear
                 </button>
               </div>
             </div>
