@@ -25,6 +25,7 @@ const Register: React.FC = () => {
 
   const dispatch = useAppDispatch();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string>('');
 
   //optimization technique know as lazy initialization. Tied to the life cycle of a browser's tab and not permanent like local storage.
   const [payload, setPayload] = useState<NectarPayload>(() => {
@@ -53,13 +54,23 @@ const Register: React.FC = () => {
 
   //the partial keyword here tells that the data may contain pieces of the NectarPayload and not the whole payload.
   //passing the function instead of directly setting makes it update on the very millisecond. If we do not do that, react will club several keystrokes.
-  const updatePayload = (data: Partial<NectarPayload>) => setPayload((prev) => ({ ...prev, ...data }));
-  const nextStep = () => setStep((prev) => prev + 1);
-  const prevStep = () => setStep((prev) => prev - 1);
+  const updatePayload = (data: Partial<NectarPayload>) => {
+    setError('');
+    setPayload((prev) => ({ ...prev, ...data }));
+  };
+  const nextStep = () => {
+    setError('');
+    setStep((prev) => prev + 1);
+  };
+  const prevStep = () => {
+    setError('');
+    setStep((prev) => prev - 1);
+  };
 
   const submitToBackend = async () => {
+    setError('');
     if (!payload.password && payload.authProvider !== 'google') {
-      alert("System security protocol: Session memory wiped. Please re-verify your access code.");
+      setError("System security protocol: Session memory wiped. Please re-enter your security key.");
       setStep(1);
       return;
     }
@@ -75,13 +86,13 @@ const Register: React.FC = () => {
         await completeAuth(dispatch, response.data.data.accessToken);
         navigate('/dashboard');
       }
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data?.message || "Invalid credentials. Access denied.";
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        const errorMessage = err.response?.data?.message || "Invalid credentials. Access denied.";
         console.error("[SYSTEM] Authorization failed:", errorMessage);
-        alert(`Error: ${errorMessage}`);
+        setError(errorMessage);
       } else {
-        alert("A critical system error occurred.");
+        setError("A critical system error occurred.");
       }
     } finally {
       setIsSubmitting(false);
@@ -101,6 +112,12 @@ const Register: React.FC = () => {
             <div className="h-full bg-red-600 transition-all duration-500 ease-out" style={{ width: `${(step / 3) * 100}%` }}></div>
           </div>
         </div>
+
+        {error && (
+          <p role="alert" className="mb-6 border-2 border-red-600 bg-red-950 px-4 py-3 text-xs font-bold uppercase tracking-widest text-red-400">
+            {error}
+          </p>
+        )}
 
         <div className="min-h-[350px]">
           {step === 1 && <Step1Credentials payload={payload} updatePayload={updatePayload} nextStep={nextStep} />}
