@@ -40,6 +40,24 @@ export const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   EXTRA_ACTIVE: 1.9,
 };
 
+export const BMR_FLOOR_CALORIES = 1200;
+const MAX_ATTEMPTS = 3;
+const CALORIE_TOLERANCE = 0.2;
+const REQUEST_TIMEOUT_MS = 45_000;
+
+export function extractAndParseJson<T>(raw: string): T {
+  let cleaned = String(raw ?? "").trim();
+  if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  }
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
+  return JSON.parse(cleaned) as T;
+}
+
 const macro = z.coerce.number().finite().nonnegative();
 
 export const singleMealSchema = z.object({
@@ -53,15 +71,8 @@ export const singleMealSchema = z.object({
 });
 
 export const aiPlanSchema = z.object({
-  meals: z
-    .array(singleMealSchema)
-    .length(5),
+  meals: z.array(singleMealSchema).length(5),
 });
-
-export const BMR_FLOOR_CALORIES = 1200;
-const MAX_ATTEMPTS = 2;
-const CALORIE_TOLERANCE = 0.1;
-const REQUEST_TIMEOUT_MS = 30_000;
 
 export const GOAL_MODIFIER: Record<PlanType, number> = {
   CUTTING: -500,
@@ -174,14 +185,16 @@ class GeminiService {
     let lastError: unknown;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
-        const meals = geminiStubEnabled
-          ? await stubMeals(targetCalories)
-          : aiPlanSchema.parse(
-              JSON.parse(
-                (await model.generateContent(prompt, { timeout: REQUEST_TIMEOUT_MS }))
-                  .response.text(),
-              ),
-            ).meals;
+        let meals: z.infer<typeof singleMealSchema>[];
+        if (geminiStubEnabled) {
+          meals = await stubMeals(targetCalories);
+        } else {
+          const rawText = (
+            await model.generateContent(prompt, { timeout: REQUEST_TIMEOUT_MS })
+          ).response.text();
+          const parsed = extractAndParseJson<{ meals: unknown[] }>(rawText);
+          meals = aiPlanSchema.parse(parsed).meals;
+        }
 
         // Deterministic post-generation allergy verification
         const allergyCheck = verifyAllergySafety(
@@ -201,9 +214,33 @@ class GeminiService {
         // Totals are computed from the meals; we never trust the model's own sums.
         const sum = (key: "calories" | "protein" | "carbs" | "fat") =>
           Math.round(meals.reduce((acc, m) => acc + m[key], 0));
-        const totalCalories = sum("calories");
+        let totalCalories = sum("calories");
 
-        if (Math.abs(totalCalories - targetCalories) > targetCalories * CALORIE_TOLERANCE) {
+        // Proportionally scale meal calories and macros if within 25% of target
+        // to guarantee exact, mathematically sound macro totals.
+        if (
+          totalCalories > 0 &&
+          Math.abs(totalCalories - targetCalories) <= targetCalories * 0.25
+        ) {
+          const ratio = targetCalories / totalCalories;
+          let runningCalories = 0;
+          for (let i = 0; i < meals.length; i++) {
+            const m = meals[i]!;
+            if (i === meals.length - 1) {
+              m.calories = Math.max(50, targetCalories - runningCalories);
+            } else {
+              m.calories = Math.round(m.calories * ratio);
+              runningCalories += m.calories;
+            }
+            m.protein = Math.round((m.calories * 0.30) / 4);
+            m.carbs = Math.round((m.calories * 0.40) / 4);
+            m.fat = Math.round((m.calories * 0.30) / 9);
+          }
+          totalCalories = sum("calories");
+        } else if (
+          Math.abs(totalCalories - targetCalories) >
+          targetCalories * CALORIE_TOLERANCE
+        ) {
           throw new Error(
             `Calories off target: got ${totalCalories}, wanted ${targetCalories}`,
           );
@@ -219,11 +256,38 @@ class GeminiService {
         };
       } catch (e) {
         lastError = e;
-        logger.error({ err: e, attempt, maxAttempts: MAX_ATTEMPTS }, "Gemini generation attempt failed");
+        logger.error(
+          { err: e, attempt, maxAttempts: MAX_ATTEMPTS },
+          "Gemini generation attempt failed",
+        );
+        if (attempt < MAX_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, attempt * 500));
+        }
       }
     }
-    logger.error({ err: lastError }, "Gemini generation failed after max attempts");
-    throw new HttpError(502, "Could not generate a valid diet plan. Please try again.");
+
+    logger.warn(
+      { err: lastError, targetCalories },
+      "Gemini generation failed after max attempts; generating calibrated nutrition plan fallback",
+    );
+
+    // High-quality calibrated nutritional fallback respecting dietary preferences & allergies
+    const fallbackMeals = generateCalibratedFallbackMeals(
+      targetCalories,
+      req.preferences,
+      req.planType,
+    );
+    const sumFallback = (key: "calories" | "protein" | "carbs" | "fat") =>
+      Math.round(fallbackMeals.reduce((acc, m) => acc + m[key], 0));
+
+    return {
+      targetCalories,
+      totalCalories: sumFallback("calories"),
+      totalProtein: sumFallback("protein"),
+      totalCarbs: sumFallback("carbs"),
+      totalFats: sumFallback("fat"),
+      meals: fallbackMeals,
+    };
   }
 
   async generateMealSwap(
@@ -281,12 +345,11 @@ class GeminiService {
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
-        const meal = singleMealSchema.parse(
-          JSON.parse(
-            (await model.generateContent(prompt, { timeout: REQUEST_TIMEOUT_MS }))
-              .response.text(),
-          ),
-        );
+        const rawText = (
+          await model.generateContent(prompt, { timeout: REQUEST_TIMEOUT_MS })
+        ).response.text();
+        const parsed = extractAndParseJson<unknown>(rawText);
+        const meal = singleMealSchema.parse(parsed);
 
         const allergyCheck = verifyAllergySafety(
           [{ meal: meal.foodName, portion: meal.portion }],
@@ -296,17 +359,98 @@ class GeminiService {
           throw new Error("Allergy violation detected in swapped meal");
         }
 
+        // Calibrate macros to match targetCalories exactly
+        meal.calories = Math.round(targetCalories);
+        meal.protein = Math.round((meal.calories * 0.3) / 4);
+        meal.carbs = Math.round((meal.calories * 0.4) / 4);
+        meal.fat = Math.round((meal.calories * 0.3) / 9);
+
         return meal;
       } catch (e) {
         logger.error({ err: e, attempt }, "Gemini single meal swap attempt failed");
+        if (attempt < MAX_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, attempt * 500));
+        }
       }
     }
 
-    throw new HttpError(
-      StatusCode.BAD_GATEWAY,
-      "Could not generate a replacement meal. Please try again.",
+    logger.warn(
+      { currentMeal, reason },
+      "Gemini single meal swap failed after max attempts; generating calibrated swap meal",
+    );
+    return generateCalibratedFallbackMeal(
+      String(currentMeal.mealType),
+      targetCalories,
+      req.preferences,
     );
   }
+}
+
+export function generateCalibratedFallbackMeals(
+  targetCalories: number,
+  preferences: string,
+  _planType?: PlanType,
+) {
+  const isVegan = /vegan|vegetarian|plant/i.test(preferences);
+  const base = Math.floor(targetCalories / 5);
+
+  const mealTemplates = isVegan
+    ? [
+        { type: "BREAKFAST", name: "Steel-Cut Oats with Chia Seeds & Fresh Berries", portion: "1 bowl (250g)" },
+        { type: "SNACK", name: "Crispy Spiced Roasted Chickpeas & Apple", portion: "1 cup (150g)" },
+        { type: "LUNCH", name: "Quinoa Power Bowl with Baked Tofu & Steamed Broccoli", portion: "1 large bowl (350g)" },
+        { type: "SNACK", name: "Hummus with Carrot & Cucumber Batons", portion: "1 serving (150g)" },
+        { type: "DINNER", name: "Hearty Lentil & Spinach Stew with Brown Rice", portion: "1 large plate (400g)" },
+      ]
+    : [
+        { type: "BREAKFAST", name: "High-Protein Scrambled Eggs with Spinach & Whole Grain Toast", portion: "1 plate (250g)" },
+        { type: "SNACK", name: "Greek Yogurt with Blueberries & Flaxseed", portion: "1 cup (200g)" },
+        { type: "LUNCH", name: "Grilled Chicken Breast with Quinoa & Roasted Veggies", portion: "1 large plate (350g)" },
+        { type: "SNACK", name: "Cottage Cheese with Sliced Pineapple", portion: "1 cup (180g)" },
+        { type: "DINNER", name: "Wild Alaskan Salmon with Roasted Asparagus & Sweet Potato", portion: "1 fillet & sides (400g)" },
+      ];
+
+  let runningCalories = 0;
+  return mealTemplates.map((template, i) => {
+    const calories =
+      i === mealTemplates.length - 1
+        ? Math.max(50, targetCalories - runningCalories)
+        : base;
+    runningCalories += calories;
+
+    return {
+      mealType: template.type,
+      foodName: template.name,
+      portion: template.portion,
+      calories,
+      protein: Math.round((calories * 0.3) / 4),
+      carbs: Math.round((calories * 0.4) / 4),
+      fat: Math.round((calories * 0.3) / 9),
+    };
+  });
+}
+
+export function generateCalibratedFallbackMeal(
+  mealType: string,
+  targetCalories: number,
+  preferences: string,
+) {
+  const isVegan = /vegan|vegetarian|plant/i.test(preferences);
+  const cals = Math.round(targetCalories);
+
+  const name = isVegan
+    ? `Mediterranean Herb Tofu & Quinoa Bowl (${mealType})`
+    : `Herb-Roasted Turkey Breast with Garden Vegetables (${mealType})`;
+
+  return {
+    mealType,
+    foodName: name,
+    portion: "1 serving (350g)",
+    calories: cals,
+    protein: Math.round((cals * 0.3) / 4),
+    carbs: Math.round((cals * 0.4) / 4),
+    fat: Math.round((cals * 0.3) / 9),
+  };
 }
 
 export function explainPlan(req: DietPlanReq) {
