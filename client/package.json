@@ -16,7 +16,6 @@
     "@nectar/types": "*",
     "@radix-ui/react-dialog": "^1.1.23",
     "@reduxjs/toolkit": "^2.11.2",
-    "@supabase/supabase-js": "^2.117.0",
     "@tailwindcss/vite": "^4.2.1",
     "axios": "^1.13.6",
     "class-variance-authority": "^0.7.1",

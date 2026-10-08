@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useSmartNavigate } from '../../hooks/useSmartNavigate';
 import api from '../../services/api';
-import { completeAuth, continueAsGuest } from '../../services/authFlow';
-import { isSupabaseConfigured } from '../../services/supabaseClient';
+import { completeAuth, signInWithGoogle } from '../../services/authFlow';
 import { useAppDispatch, useAppSelector } from '../../hooks/reduxHooks';
 import axios from 'axios';
 import { Logo } from '../../components/Logo';
+import { GoogleIcon } from '../../components/icons/GoogleIcon';
 import { Card } from '../../components/ui/Card';
 import { Field } from '../../components/ui/Field';
 import { Input } from '../../components/ui/Input';
@@ -17,7 +17,7 @@ import { notify } from '../../lib/toast';
 const Login: React.FC = () => {
   const navigate = useSmartNavigate();
   const dispatch = useAppDispatch();
-  const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
   useEffect(() => {
     if (isAuthenticated) navigate('/dashboard');
@@ -26,78 +26,34 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isGuestLoading, setIsGuestLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
-  const [isResending, setIsResending] = useState(false);
 
-  const handleResendConfirmation = async () => {
-    if (!unconfirmedEmail) return;
-    setIsResending(true);
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
     try {
-      const { supabase } = await import('../../services/supabaseClient');
-      if (supabase) {
-        const { error } = await supabase.auth.resend({
-          type: 'signup',
-          email: unconfirmedEmail,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
-        if (error) {
-          notify.error(error.message);
-        } else {
-          notify.success('Confirmation email resent! Check your inbox.');
-        }
+      const user = await signInWithGoogle(dispatch);
+      const hasConstraints =
+        (user?.constraints && user.constraints.length > 0) || Boolean(user?.constraint);
+      if (!hasConstraints) {
+        notify.success("Signed in with Google — let's set up your profile!");
+        navigate('/welcome');
+      } else {
+        notify.success('Welcome back to Nectar!');
+        navigate('/dashboard');
       }
-    } catch {
-      notify.error('Could not resend email.');
+    } catch (err: any) {
+      notify.error(err?.message || 'Could not initiate Google sign in.');
     } finally {
-      setIsResending(false);
+      setIsGoogleLoading(false);
     }
   };
 
   const handleLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    setUnconfirmedEmail(null);
 
     try {
-      const { supabase } = await import('../../services/supabaseClient');
-      if (supabase) {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          if (error.message.toLowerCase().includes('email not confirmed')) {
-            setUnconfirmedEmail(email);
-            notify.error('Please verify your email before logging in.');
-            return;
-          }
-
-          // Fallback check for accounts created directly in database before Supabase Auth migration
-          try {
-            const fallbackRes = await api.post('/auth/login', { email, password });
-            if (fallbackRes.data.success && fallbackRes.data.data.accessToken) {
-              await completeAuth(dispatch, fallbackRes.data.data.accessToken);
-              navigate('/dashboard');
-              return;
-            }
-          } catch {
-            // ignore fallback
-          }
-
-          notify.error(error.message || 'That email or password is incorrect.');
-          return;
-        }
-
-        if (data.session?.access_token) {
-          const { syncSupabaseSession } = await import('../../services/authFlow');
-          await syncSupabaseSession(dispatch, data.session.access_token);
-          navigate('/dashboard');
-          return;
-        }
-      }
-
-      // Supabase unconfigured or local fallback
       const authResponse = await api.post('/auth/login', { email, password });
       if (authResponse.data.success && authResponse.data.data.accessToken) {
         await completeAuth(dispatch, authResponse.data.data.accessToken);
@@ -114,28 +70,35 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleGuest = async () => {
-    setIsGuestLoading(true);
-    try {
-      await continueAsGuest(dispatch);
-      navigate('/welcome');
-    } catch (err) {
-      notify.error(
-        axios.isAxiosError(err)
-          ? err.response?.data?.message || "Couldn't start a guest session."
-          : "Couldn't start a guest session.",
-      );
-    } finally {
-      setIsGuestLoading(false);
-    }
-  };
-
   return (
     <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-linen p-4 sm:p-6">
       <Card variant="quiet" padding="lg" className="w-full max-w-md sm:p-10">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <Logo iconOnly />
           <h1 className="font-display text-2xl font-semibold text-ink">Log in</h1>
+        </div>
+
+        <div className="mb-6 flex flex-col gap-4">
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            loading={isGoogleLoading}
+            onClick={handleGoogleLogin}
+            className="flex w-full items-center justify-center gap-3 border-line bg-linen/50 hover:bg-cream"
+          >
+            <GoogleIcon className="h-4 w-4 shrink-0" />
+            <span>Continue with Google</span>
+          </Button>
+
+          <div className="relative flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-line" />
+            </div>
+            <span className="relative bg-bone px-3 text-xs uppercase tracking-wider text-ink-muted">
+              or continue with email
+            </span>
+          </div>
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-5">
@@ -194,38 +157,6 @@ const Login: React.FC = () => {
             </p>
           </div>
         </form>
-
-        {unconfirmedEmail && (
-          <div className="mt-4 rounded-xl border border-honey/40 bg-honey/10 p-4 text-center">
-            <p className="text-xs text-ink leading-relaxed">
-              Account activation pending for <strong>{unconfirmedEmail}</strong>.
-            </p>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              loading={isResending}
-              onClick={handleResendConfirmation}
-              className="mt-2.5 text-xs"
-            >
-              Resend verification email
-            </Button>
-          </div>
-        )}
-
-        {isSupabaseConfigured && (
-          <div className="mt-6 border-t border-line pt-6">
-            <Button
-              variant="secondary"
-              size="lg"
-              loading={isGuestLoading}
-              onClick={handleGuest}
-              className="w-full"
-            >
-              {isGuestLoading ? 'Starting…' : 'Continue as guest'}
-            </Button>
-          </div>
-        )}
       </Card>
     </div>
   );

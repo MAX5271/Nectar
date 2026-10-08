@@ -19,3 +19,4 @@ Thumbs.db
 
 # Workspace build artifacts
 packages/*/dist
+.github

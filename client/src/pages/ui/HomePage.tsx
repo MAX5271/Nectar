@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
-import { useAppSelector, useAppDispatch } from '../../hooks/reduxHooks';
-import { continueAsGuest } from '../../services/authFlow';
+import { useAppSelector } from '../../hooks/reduxHooks';
 import { NectarDroplet } from '../../components/nectar/NectarDroplet';
 import { NectarButton } from '../../components/ui/NectarButton';
-import { notify } from '../../lib/toast';
 import { ArrowRight, Check, UtensilsCrossed, Scale, Sparkles } from 'lucide-react';
 
 const RADIUS = 70;
@@ -73,28 +71,12 @@ const PlateChart: React.FC = () => {
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const { isAuthenticated, isInitialized } = useAppSelector((state) => state.auth);
-  const [isGuestLoading, setIsGuestLoading] = useState(false);
 
   // Canonical '/' redirect: If authenticated, immediately route to Today cockpit
   if (isInitialized && isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
-
-  const handleGuestTrial = async () => {
-    setIsGuestLoading(true);
-    try {
-      await continueAsGuest(dispatch);
-      notify.success('Welcome! Guest session initiated.');
-      navigate('/dashboard');
-    } catch {
-      notify.error("Couldn't start guest session. Please register with email.");
-      navigate('/register');
-    } finally {
-      setIsGuestLoading(false);
-    }
-  };
 
   return (
     <div className="bg-linen text-ink">
@@ -130,16 +112,15 @@ export const HomePage: React.FC = () => {
               <NectarButton
                 variant="secondary"
                 size="lg"
-                loading={isGuestLoading}
-                onClick={handleGuestTrial}
+                onClick={() => navigate('/login')}
               >
-                Try as Guest (1-Click)
+                Sign In
               </NectarButton>
             </div>
 
             <div className="flex items-center gap-6 pt-4 text-xs font-mono text-ink-muted">
               <span className="flex items-center gap-1.5">
-                <Check className="h-3.5 w-3.5 text-herb" /> Free anonymous trial
+                <Check className="h-3.5 w-3.5 text-herb" /> Quick Google Sign-In
               </span>
               <span className="flex items-center gap-1.5">
                 <Check className="h-3.5 w-3.5 text-herb" /> No calorie math required

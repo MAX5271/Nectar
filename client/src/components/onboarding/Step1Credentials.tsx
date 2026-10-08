@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { type NectarPayload } from '../../types';
 import { useSmartNavigate } from '../../hooks/useSmartNavigate';
+import { GoogleIcon } from '../icons/GoogleIcon';
+import { notify } from '../../lib/toast';
 import { Field } from '../ui/Field';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
@@ -12,13 +14,33 @@ interface StepProps {
   updatePayload: (data: Partial<NectarPayload>) => void;
   nextStep: () => void;
   notice?: string;
+  onGoogleSignUp?: () => Promise<void> | void;
 }
 
-const Step1Credentials: React.FC<StepProps> = ({ payload, updatePayload, nextStep, notice }) => {
+const Step1Credentials: React.FC<StepProps> = ({
+  payload,
+  updatePayload,
+  nextStep,
+  notice,
+  onGoogleSignUp,
+}) => {
   const navigate = useSmartNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [confirmError, setConfirmError] = useState('');
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const handleGoogleSignUp = async () => {
+    if (!onGoogleSignUp) return;
+    setIsGoogleLoading(true);
+    try {
+      await onGoogleSignUp();
+    } catch (err: any) {
+      notify.error(err?.message || 'Could not initiate Google sign in.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
 
   const handleContinue = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,6 +61,29 @@ const Step1Credentials: React.FC<StepProps> = ({ payload, updatePayload, nextSte
         <div className="mb-1">
           <h2 className="font-display text-xl font-semibold text-ink">Create your account</h2>
           <p className="mt-1 text-sm text-ink-soft">Let's start with the basics.</p>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            loading={isGoogleLoading}
+            onClick={handleGoogleSignUp}
+            className="flex w-full items-center justify-center gap-3 border-line bg-linen/50 hover:bg-cream"
+          >
+            <GoogleIcon className="h-4 w-4 shrink-0" />
+            <span>Continue with Google</span>
+          </Button>
+
+          <div className="relative flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-line" />
+            </div>
+            <span className="relative bg-bone px-3 text-xs uppercase tracking-wider text-ink-muted">
+              or continue with email
+            </span>
+          </div>
         </div>
 
         {notice && (

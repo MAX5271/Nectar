@@ -6,9 +6,8 @@ import { refreshLimiter } from "../middleware/rateLimiters.js";
 
 const router = Router();
 
-router.post("/login", authController.login);
-router.post("/guest", authController.loginAsGuest);
-router.post("/supabase-session", authController.handleSupabaseSession);
+router.post("/login", authController.login.bind(authController));
+router.post("/google", authController.googleLogin.bind(authController));
 // Refresh/logout authenticate via the HttpOnly refresh cookie, not the access token.
 // Primary standard endpoint: POST /api/auth/refresh (RFC-compliant state-changing refresh)
 router.post("/refresh", refreshLimiter, authController.refresh);

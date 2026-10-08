@@ -2,7 +2,7 @@ import { authService } from "../services/authService.js";
 import type { Request, Response } from "express";
 import StatusCode from "../utils/statusCodes.js";
 import { HttpError } from "../utils/httpError.js";
-import { loginSchema, guestLoginSchema, supabaseSessionSchema } from "../utils/validation.js";
+import { loginSchema, googleLoginSchema } from "../utils/validation.js";
 import {
   REFRESH_COOKIE,
   clearCookieOptions,
@@ -26,31 +26,13 @@ class AuthController {
     });
   }
 
-  async loginAsGuest(req: Request, res: Response): Promise<void> {
-    const { supabaseAccessToken } = guestLoginSchema.parse(req.body);
+  async googleLogin(req: Request, res: Response): Promise<void> {
+    const { idToken, profile } = googleLoginSchema.parse(req.body);
     const userAgent = req.headers["user-agent"];
     const ipAddress = req.ip || req.socket.remoteAddress;
 
-    const { accessToken, refreshToken, username, id, email } = await authService.loginAsGuest(
-      supabaseAccessToken,
-      { userAgent, ipAddress },
-    );
-
-    res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions);
-    res.status(StatusCode.SUCCESS).json({
-      success: true,
-      message: "Signed in as guest",
-      data: { id, username, email, accessToken },
-    });
-  }
-
-  async handleSupabaseSession(req: Request, res: Response): Promise<void> {
-    const { supabaseAccessToken, profile } = supabaseSessionSchema.parse(req.body);
-    const userAgent = req.headers["user-agent"];
-    const ipAddress = req.ip || req.socket.remoteAddress;
-
-    const { accessToken, refreshToken, username, id, email } = await authService.loginWithSupabase(
-      supabaseAccessToken,
+    const { accessToken, refreshToken, username, id, email } = await authService.loginWithGoogle(
+      idToken,
       { userAgent, ipAddress },
       profile,
     );
@@ -58,7 +40,7 @@ class AuthController {
     res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions);
     res.status(StatusCode.SUCCESS).json({
       success: true,
-      message: "Authenticated via Supabase",
+      message: "Authenticated via Google",
       data: { id, username, email, accessToken },
     });
   }

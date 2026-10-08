@@ -4,7 +4,7 @@ import { userRepository } from "../repository/userRepository.js";
 import { jwtHelper } from "../utils/jwtHelper.js";
 import { HttpError } from "../utils/httpError.js";
 import StatusCode from "../utils/statusCodes.js";
-import { supabaseService } from "./supabaseService.js";
+import { googleAuthService } from "./googleAuthService.js";
 
 interface LoginData {
   email: string;
@@ -56,28 +56,17 @@ class AuthService {
     };
   }
 
-  // Exchanges a Supabase session (anonymous or email/password) for an app session — same
-  // shape as login(). Safe to call repeatedly for the same identity: the underlying User
-  // row already exists after the first call, so later calls just issue a fresh session.
-  async loginWithSupabase(
-    supabaseAccessToken: string,
+  // Authenticates with Google ID token directly, upserts user, and issues Nectar session.
+  async loginWithGoogle(
+    idToken: string,
     { userAgent, ipAddress }: SessionMeta,
     initialProfile?: any,
   ) {
-    const identity = await supabaseService.verifyToken(supabaseAccessToken);
-    const profile = initialProfile || {
-      age: identity.userMetadata?.age,
-      gender: identity.userMetadata?.gender,
-      height: identity.userMetadata?.height,
-      weight: identity.userMetadata?.weight,
-      unitSystem: identity.userMetadata?.unitSystem,
-      planType: identity.userMetadata?.planType,
-      preferences: identity.userMetadata?.preferences,
-    };
-    const user = await userRepository.upsertSupabaseUser({
-      id: identity.id,
+    const identity = await googleAuthService.verifyToken(idToken);
+    const profile = initialProfile || {};
+    const user = await userRepository.upsertGoogleUser({
       email: identity.email,
-      username: identity.username,
+      username: identity.name,
       profile,
     });
     const { accessToken, refreshToken } = await this.issueSession(user.id, { userAgent, ipAddress });
@@ -89,10 +78,6 @@ class AuthService {
       id: user.id,
       email: user.email,
     };
-  }
-
-  async loginAsGuest(supabaseAccessToken: string, meta: SessionMeta) {
-    return this.loginWithSupabase(supabaseAccessToken, meta);
   }
 
   async refreshToken(token: string) {

@@ -13,7 +13,9 @@ export const completeAuth = async (dispatch: AppDispatch, accessToken: string) =
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
-  dispatch(setCredentials({ user: profileResponse.data.data, token: accessToken }));
+  const user = profileResponse.data.data;
+  dispatch(setCredentials({ user, token: accessToken }));
+  return user;
 };
 
 // Initialize authentication on app mount via silent refresh using HttpOnly cookie.
@@ -38,53 +40,26 @@ export const initAuthSession = async (dispatch: AppDispatch) => {
   }
 };
 
-// Exchanges a Supabase session (anonymous, email/password, or OAuth) for an app session.
-export const syncSupabaseSession = async (
-  dispatch: AppDispatch,
-  supabaseAccessToken: string,
-  profile?: any,
-) => {
-  const authResponse = await api.post('/auth/supabase-session', {
-    supabaseAccessToken,
-    profile,
-  });
+// Exchanges a Google token (ID token or access token) for an app session.
+export const loginWithGoogleToken = async (dispatch: AppDispatch, idToken: string) => {
+  const authResponse = await api.post('/auth/google', { idToken });
 
   const accessToken = authResponse.data?.data?.accessToken as string | undefined;
   if (!accessToken) {
     throw new Error('Could not establish session.');
   }
 
-  await completeAuth(dispatch, accessToken);
+  return await completeAuth(dispatch, accessToken);
 };
 
-// Starts (or resumes) a Supabase anonymous session, then exchanges it for a normal
-// app session via the existing login machinery — completeAuth() below is what every
-// other auth path already uses, so a guest session behaves identically everywhere else.
-export const continueAsGuest = async (dispatch: AppDispatch) => {
-  const { supabase } = await import('./supabaseClient');
-  if (!supabase) {
-    throw new Error('Guest sign-in is not available right now.');
-  }
-
-  const { data, error } = await supabase.auth.signInAnonymously();
-  if (error || !data.session) {
-    throw error ?? new Error('Could not start a guest session.');
-  }
-
-  await syncSupabaseSession(dispatch, data.session.access_token);
+// Starts Google OAuth sign-in flow via Google Identity Services.
+export const signInWithGoogle = async (dispatch: AppDispatch) => {
+  const { promptGoogleSignIn } = await import('./googleAuth');
+  return await promptGoogleSignIn(dispatch);
 };
 
-// Revoke the refresh token server-side, clear Supabase session, then wipe local state.
+// End local and server session.
 export const endSession = async (dispatch: AppDispatch) => {
-  try {
-    const { supabase } = await import('./supabaseClient');
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
-  } catch {
-    // Best-effort
-  }
-
   try {
     await api.post('/auth/logout');
   } catch {

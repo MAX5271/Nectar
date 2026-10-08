@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Mail } from 'lucide-react';
-import { supabase } from '../../services/supabaseClient';
+import api from '../../services/api';
 import { notify } from '../../lib/toast';
 import { Card } from '../ui/Card';
 import { Field } from '../ui/Field';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 
-/** Shown on Dashboard for guest accounts (no email yet) — lets them claim it via Supabase's email verification. */
+/** Shown on Dashboard for guest accounts (no email yet) — lets them claim it by saving their email. */
 export function ClaimAccountCard() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,18 +16,15 @@ export function ClaimAccountCard() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!supabase) return;
+    if (!email) return;
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.updateUser(
-        { email },
-        { emailRedirectTo: `${window.location.origin}/auth/callback` },
-      );
-      if (error) throw error;
+      await api.patch('/user/profile', { email });
       setIsSent(true);
-    } catch (err) {
-      notify.error(err instanceof Error ? err.message : "Couldn't send that. Try again.");
+      notify.success('Account updated successfully!');
+    } catch (err: any) {
+      notify.error(err?.response?.data?.message || err?.message || "Couldn't save that. Try again.");
     } finally {
       setIsSubmitting(false);
     }

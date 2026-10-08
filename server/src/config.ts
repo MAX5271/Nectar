@@ -29,11 +29,8 @@ const envSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
-  // Optional (unlike the required vars above): guest sign-in degrades gracefully
-  // with a clear error until these are set, instead of the whole server refusing to boot.
-  SUPABASE_URL: z.string().url().optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
-  SUPABASE_ANON_KEY: z.string().min(1).optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
+  GOOGLE_CLIENT_ID: z.string().optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
+  GOOGLE_CLIENT_SECRET: z.string().optional().or(z.literal("")).transform((v) => (v ? v : undefined)),
 });
 
 const parsed = envSchema.safeParse(process.env);

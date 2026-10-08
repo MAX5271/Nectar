@@ -4,8 +4,8 @@
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19.2-cyan.svg)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4.2-38bdf8.svg)](https://tailwindcss.com/)
-[![Prisma](https://img.shields.io/badge/Prisma-6.4-indigo.svg)](https://www.prisma.io/)
-[![Supabase](https://img.shields.io/badge/Supabase-Auth%20&%20Guest-3ecf8e.svg)](https://supabase.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-7.4-indigo.svg)](https://www.prisma.io/)
+[![Google OAuth](https://img.shields.io/badge/Google%20OAuth-Identity%20Services-4285F4.svg)](https://developers.google.com/identity)
 [![Vitest](https://img.shields.io/badge/Tests-Client%20&%20Server%20Passing-brightgreen.svg)](https://vitest.dev/)
 [![License](https://img.shields.io/badge/License-ISC-black.svg)](#license)
 
@@ -23,13 +23,17 @@ The frontend is an **identity-first personal nutrition cockpit**:
 - [The Nectar Identity & Design System](#-the-nectar-identity--design-system)
 - [Application Shell & Canonical Routing](#-application-shell--canonical-routing)
 - [Workspace Surfaces](#-workspace-surfaces)
-- [Authentication Architecture (Hybrid Supabase & Native JWT)](#-authentication-architecture-hybrid-supabase--native-jwt)
+- [Authentication Architecture (Google OAuth & Native JWT Sessions)](#-authentication-architecture-google-oauth--native-jwt-sessions)
 - [Prerequisites](#-prerequisites)
 - [Local Setup & Getting Started](#-local-setup--getting-started)
   - [1. Clone and Install Dependencies](#1-clone-and-install-dependencies)
   - [2. Configure Environment Variables](#2-configure-environment-variables)
   - [3. Database Setup](#3-database-setup)
   - [4. Launch the Development Environment](#4-launch-the-development-environment)
+- [Deployment & Cloud Hosting (Vercel & Render)](#-deployment--cloud-hosting-vercel--render)
+  - [1. Frontend Deployment on Vercel](#1-frontend-deployment-on-vercel)
+  - [2. Backend Deployment on Render](#2-backend-deployment-on-render)
+  - [3. Google Cloud OAuth Console Setup](#3-google-cloud-oauth-console-setup)
 - [Complete API Reference](#-complete-api-reference)
   - [Response Envelope Format](#response-envelope-format)
   - [1. System & Health](#1-system--health)
@@ -196,21 +200,21 @@ The dietary command center organized in a 12-column responsive layout:
 
 ---
 
-## 🔐 Authentication Architecture (Hybrid Supabase & Native JWT)
+## 🔐 Authentication Architecture (Google OAuth & Native JWT Sessions)
 
-NECTAR implements a hybrid authentication model:
+NECTAR implements a secure, identity-first authentication model:
 
 1. **In-Memory Access Tokens**:
-   - Bearer access tokens reside **strictly in volatile Redux memory**. They are never saved to `localStorage` or `sessionStorage`, mitigating XSS exfiltration risks.
+   - Bearer access tokens reside **strictly in volatile Redux memory**. They are never saved to `localStorage` or `sessionStorage`, eliminating XSS token exfiltration risks.
 2. **HttpOnly Secure Refresh Cookies**:
    - Rotating refresh tokens are stored in `HttpOnly`, `Secure` cookies with `SameSite=Lax` (development) or `SameSite=None` (cross-site production).
    - Replay & reuse detection: If an old or rotated token is used, all active sessions for that user are immediately revoked.
-3. **1-Click Supabase Guest Auth**:
-   - Anonymous trial via Supabase Anonymous Sign-In (`continueAsGuest`).
-   - Guest accounts have `email: null` in PostgreSQL, enabling immediate protocol generation without upfront registration.
-   - One-click account claiming via `/welcome` securely attaches an email and password to the existing guest user ID.
+3. **Google OAuth 2.0 Integration (Google Identity Services)**:
+   - One-click sign-in via official Google Identity Services (`gsi/client`) popup flow.
+   - Verified server-side via Google's token verification endpoints (`tokeninfo` & `userinfo`) to validate audience (`GOOGLE_CLIENT_ID`), issuer, expiry, and email verification.
+   - First-time Google users are automatically provisioned in PostgreSQL and smartly guided to biometric onboarding (`/welcome`).
 4. **Multi-Device Session Tracking**:
-   - Every active session is tracked in the `Session` table in PostgreSQL with user agent parsing, IP address, and remote revocation capability.
+   - Every active session is tracked in the `Session` table in PostgreSQL with user agent parsing, IP address, and remote revocation capability from `/security`.
 
 ---
 
@@ -218,9 +222,9 @@ NECTAR implements a hybrid authentication model:
 
 - **Node.js**: `v20.0.0` or higher
 - **npm**: `v10.0.0` or higher
-- **PostgreSQL**: Local PostgreSQL or containerized Docker instance (or Supabase Postgres)
+- **PostgreSQL**: Local PostgreSQL, Docker instance, or cloud PostgreSQL (Neon, Render, Supabase Postgres)
 - **Google AI Studio API Key**: For Gemini diet generation ([Get Key](https://aistudio.google.com/))
-- **Supabase Project** *(Optional, recommended for 1-click guest sign-in)*: ([supabase.com](https://supabase.com/))
+- **Google Cloud OAuth 2.0 Client**: For Google Sign-In ([Google Cloud Console](https://console.cloud.google.com/))
 
 ---
 
@@ -257,15 +261,14 @@ GEMINI_MODE=live                  # Set to "stub" for local offline testing with
 ACCESS_TOKEN_SECRET="super-secret-access-token-key-must-be-at-least-32-chars-long"
 REFRESH_TOKEN_SECRET="super-secret-refresh-token-key-must-be-at-least-32-chars-long"
 
+# Google OAuth 2.0
+GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="your-client-secret"  # Optional
+
 # Rate Limiting (Optional overrides)
 RATE_LIMIT_DISABLED=false
 SWAP_LIMIT_PER_HOUR=20
 REFRESH_LIMIT_PER_15M=60
-
-# Supabase Auth (Optional — enables "Continue as guest")
-SUPABASE_URL="https://your-project.supabase.co"
-SUPABASE_ANON_KEY="eyJhbGciOi..."
-SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOi..."
 ```
 
 #### Client Environment (`client/.env`)
@@ -274,10 +277,7 @@ Create `client/.env` based on `client/.env.example`:
 
 ```env
 VITE_API_URL=http://localhost:5000/api
-
-# Supabase Auth (Optional — enables 1-click guest button)
-VITE_SUPABASE_URL="https://your-project.supabase.co"
-VITE_SUPABASE_ANON_KEY="eyJhbGciOi..."
+VITE_GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
 ```
 
 ### 3. Database Setup
@@ -313,6 +313,95 @@ npm --workspace=server run dev
 # Terminal 2: Client UI (runs on http://localhost:5173)
 npm --workspace=Nectar run dev
 ```
+
+---
+
+## 🚀 Deployment & Cloud Hosting (Vercel & Render)
+
+> 📖 **Full Cloud Deployment Guide**: Detailed step-by-step instructions, build overrides, and dashboard parameters are documented in [**`DEPLOYMENT.md`**](DEPLOYMENT.md).
+
+NECTAR is configured for seamless monorepo deployment with the frontend on **Vercel** and the backend API on **Render**.
+
+### 1. Frontend Deployment on Vercel
+
+In your Vercel Project Settings:
+
+#### Framework & Root Settings
+* **Framework Preset**: `Vite`
+* **Root Directory**: `client`
+* **Include files outside the root directory in the Build Step**: **Enabled** *(Must be ON so Vercel can access `@nectar/types` and workspace root)*
+* **Skip deployments...**: Disabled
+
+#### Build & Development Settings (Overrides)
+* **Build Command**: Toggle Override **ON**  
+  ```bash
+  cd .. && npm run build:types && npm run build:client
+  ```
+* **Output Directory**: Leave Override **OFF** (default: `dist`)
+* **Install Command**: Toggle Override **ON**  
+  ```bash
+  cd .. && npm install
+  ```
+* **Development Command**: Leave Override **OFF** (default: `vite`)
+
+#### Environment Variables (Vercel)
+* `VITE_API_URL`: `https://your-backend-domain.onrender.com/api`
+* `VITE_GOOGLE_CLIENT_ID`: `<your-client-id>.apps.googleusercontent.com`
+
+---
+
+### 2. Backend Deployment on Render
+
+In your Render Dashboard, create a **Web Service** connected to your repo:
+
+#### Web Service Configuration
+* **Branch**: `main`
+* **Root Directory**: `server`
+* **Build Command**:
+  ```bash
+  cd .. && npm install && npm run build:types && cd server && npx prisma generate && npm run build
+  ```
+* **Start Command**:
+  ```bash
+  npm start
+  ```
+  *(or `npx prisma migrate deploy && npm start` to automatically run database migrations on boot)*
+
+#### Build Filters (Auto-Deploy)
+Under **Build Filters** → **Included Paths**, add:
+* `server/**`
+* `packages/**`
+
+#### Environment Variables (Render)
+* `NODE_ENV`: `production` *(enables trust proxy for secure HTTPS cookies)*
+* `PORT`: `5000` *(or leave default Render port)*
+* `DATABASE_URL`: `postgresql://user:password@host:5432/dbname`
+* `CLIENT_URL`: `https://nectar-tau.vercel.app` *(Crucial: allows credentials and cookies from frontend)*
+* `ACCESS_TOKEN_SECRET`: `(at least 32 characters)`
+* `REFRESH_TOKEN_SECRET`: `(at least 32 characters)`
+* `GEMINI_API_KEY`: `AIzaSy...`
+* `GOOGLE_CLIENT_ID`: `<your-client-id>.apps.googleusercontent.com`
+* `GOOGLE_CLIENT_SECRET`: `your-google-client-secret` *(optional)*
+
+---
+
+### 3. Google Cloud OAuth Console Setup
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services**.
+2. **OAuth Consent Screen**:
+   * App name: `Nectar`
+   * Support & developer emails: Your email
+   * Scopes: `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile`
+   * Test users: Add test Gmail addresses if in Testing mode.
+3. **Credentials** → **Create Credentials** → **OAuth client ID** (`Web application`):
+   * **Authorized JavaScript origins**:
+     * `http://localhost:5173` *(Local Vite dev server)*
+     * `https://nectar-tau.vercel.app` *(Vercel production URL)*
+   * **Authorized redirect URIs**:
+     * `http://localhost:5173`
+     * `http://localhost:5173/auth/callback`
+     * `https://nectar-tau.vercel.app`
+     * `https://nectar-tau.vercel.app/auth/callback`
 
 ---
 
@@ -393,18 +482,21 @@ Authenticates user credentials, registers a session record, and sets the `HttpOn
 - **Authentication**: None (Public)
 - **Response `200 OK`**: Sets cookie and returns access token + user details.
 
-#### `POST /api/auth/supabase-session`
-Exchanges a Supabase session (anonymous, email/password, or OAuth) for an app session.
+#### `POST /api/auth/google`
+Authenticates via Google Identity Services token (ID token or access token), establishes or links the user account, registers a session record, and sets the `HttpOnly` refresh cookie.
 
 - **Authentication**: None (Public)
+- **Rate Limit**: 30 requests / 15 min (`authLimiter`)
 - **Request Body**:
   ```json
   {
-    "supabaseAccessToken": "eyJhbGciOi...",
-    "profile": { ...optional biometrics... }
+    "idToken": "<google-id-token-or-access-token>",
+    "profile": { ...optional biometrics for instant setup... }
   }
   ```
-- **Response `200 OK`**: Returns access token and establishes an active Nectar session.
+- **Response `200 OK`**:
+  - **Set-Cookie**: `jwt=<refreshToken>; HttpOnly; Secure; SameSite=Lax/None; Max-Age=7d`
+  - **Body**: `{ "success": true, "data": { "id": "...", "username": "Alex", "email": "alex@gmail.com", "accessToken": "..." } }`
 
 #### `POST /api/auth/refresh`
 Rotates the session refresh token and issues a fresh short-lived Bearer access token.
@@ -567,7 +659,7 @@ Returns logged meals and aggregated macronutrient adherence totals for a specifi
 
 | Limiter | Window | Limit | Target Endpoints |
 |---|:---:|:---:|---|
-| `authLimiter` | 15 min | 30 req | `POST /api/auth/login`, `POST /api/user/signup` |
+| `authLimiter` | 15 min | 30 req | `POST /api/auth/login`, `POST /api/user/signup`, `POST /api/auth/google` |
 | `refreshLimiter` | 15 min | 60 req | `POST /api/auth/refresh`, `GET /api/auth/refresh` |
 | `generateLimiter` | 60 min | 10 req | `POST /api/diet/plan` |
 | `swapLimiter` | 60 min | 20 req | `POST /api/diet/swap` |
@@ -579,11 +671,11 @@ Returns logged meals and aggregated macronutrient adherence totals for a specifi
 All verification commands can be run from the repository root:
 
 ```bash
-# Run client unit and component tests (30 tests across 6 suites)
+# Run client unit and component tests (32 tests across 7 suites)
 npm --workspace=Nectar test
 
-# Run server unit tests (32 tests across 6 suites)
-npm --workspace=server run test tests/unit/
+# Run server unit and integration tests (38 tests across 8 suites)
+npm --workspace=server run test tests/unit/ tests/integration/googleAuthIntegration.test.ts
 
 # Run complete TypeScript build and bundle checks (client + server)
 npm run build

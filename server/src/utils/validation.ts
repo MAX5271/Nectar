@@ -81,14 +81,8 @@ export const trendQuerySchema = z.object({
 
 export type TrendQueryInput = z.infer<typeof trendQuerySchema>;
 
-export const guestLoginSchema = z.object({
-  supabaseAccessToken: z.string().min(1, "supabaseAccessToken is required"),
-});
-
-export type GuestLoginInput = z.infer<typeof guestLoginSchema>;
-
-export const supabaseSessionSchema = z.object({
-  supabaseAccessToken: z.string().min(1, "supabaseAccessToken is required"),
+export const googleLoginSchema = z.object({
+  idToken: z.string().min(1, "Google ID token is required"),
   profile: z
     .object({
       age: z.coerce.number().int().min(13).max(120).optional(),
@@ -105,5 +99,6 @@ export const supabaseSessionSchema = z.object({
     .optional(),
 });
 
-export type SupabaseSessionInput = z.infer<typeof supabaseSessionSchema>;
+export type GoogleLoginInput = z.infer<typeof googleLoginSchema>;
+
 

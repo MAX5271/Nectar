@@ -19,23 +19,8 @@ const ForgotPassword: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const { supabase } = await import('../../services/supabaseClient');
-      if (!supabase) {
-        notify.error('Password reset service is not available right now.');
-        return;
-      }
-
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      });
-
-      if (error) {
-        notify.error(error.message);
-        return;
-      }
-
       setIsSubmitted(true);
-      notify.success('Password reset email sent! Check your inbox.');
+      notify.success('If an account exists with this email, reset instructions will be provided.');
     } catch {
       notify.error('Failed to send reset link. Try again.');
     } finally {
