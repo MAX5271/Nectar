@@ -11,5 +11,6 @@ router.get("/weight/trend", trackingController.getWeightTrend);
 
 router.post("/meals", trackingController.logMeal);
 router.get("/meals", trackingController.getDailyMealLogs);
+router.get("/meals/trend", trackingController.getMealAdherenceTrend);
 
 export default router;

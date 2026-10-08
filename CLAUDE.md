@@ -13,20 +13,20 @@ NECTAR is an AI-driven diet planner. Monorepo with two independent npm projects 
 
 Server (`cd server`):
 - `npm install`, then `npx prisma migrate dev` and `npx prisma generate` (the client is generated into `@prisma/client`; regenerate after schema changes).
-- `npm run dev` (tsx watch), `npm run build` (tsc → `dist/`), `npm start`, `npm run typecheck`. No test suite.
+- `npm run dev` (tsx watch), `npm run build` (tsc → `dist/`), `npm start`, `npm run typecheck`, `npm test` (Vitest — unit + supertest integration suites under `tests/`, against a local test Postgres via `TEST_DATABASE_URL`).
 - `npm run test:gemini` — ad-hoc script exercising BMR calc + Gemini generation, bypassing HTTP.
-- Required `server/.env`: `DATABASE_URL`, `GEMINI_API_KEY`, `ACCESS_TOKEN_SECRET`, `REFRESH_TOKEN_SECRET`; optional `CLIENT_URL` (CORS allowlist, alongside `http://localhost:5173`), `PORT` (default 5000). Set `NODE_ENV=production` when deployed (enables `SameSite=None` refresh cookie and `trust proxy`). See `.env.example`.
+- Required `server/.env`: `DATABASE_URL`, `GEMINI_API_KEY`, `ACCESS_TOKEN_SECRET`, `REFRESH_TOKEN_SECRET`; optional `CLIENT_URL` (CORS allowlist, alongside `http://localhost:5173`), `PORT` (default 5000), `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` (enables guest sign-in — `POST /auth/guest` 503s without them, rest of the app unaffected). Set `NODE_ENV=production` when deployed (enables `SameSite=None` refresh cookie and `trust proxy`). See `.env.example`.
 
 Client (`cd client`):
-- `npm run dev` (Vite, port 5173), `npm run build` (`tsc -b && vite build`), `npm run lint`. No tests.
-- `VITE_API_URL` sets the API base URL (defaults to `http://localhost:5000/api`).
+- `npm run dev` (Vite, port 5173), `npm run build` (`tsc -b && vite build`), `npm run lint`, `npm run test` (Vitest + React Testing Library, under `tests/`).
+- `VITE_API_URL` sets the API base URL (defaults to `http://localhost:5000/api`). `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` (optional) enable the "Continue as guest" button on Login.
 - `vercel.json` rewrites all paths to `/` for SPA routing.
 
 ## Architecture
 
 **Server** is layered: `routes/` → `controller/` → `services/` → `repository/` (Prisma via `utils/db.ts`, which uses the `@prisma/adapter-pg` driver adapter). Controllers have no try/catch: Express 5 forwards async rejections to `middleware/errorHandler.ts`, which maps `HttpError`, zod errors and Prisma P2002 to responses. Request bodies are validated with zod in `utils/validation.ts`. Routes mount at `/api/auth`, `/api/user`, `/api/diet`; protected routes use `middleware/verifyJWT.ts` (Bearer access token → `req.id`; returns 401 on invalid/expired so the client refreshes).
 
-**Auth**: access token (30m) in the `Authorization` header; refresh token (7d) in an HttpOnly cookie, stored **hashed** on the `User` row. `/auth/refresh` and `/auth/logout` authenticate via the cookie only (not the access token). Signup and login both set the cookie.
+**Auth**: access token (30m) in the `Authorization` header; refresh token (7d) in an HttpOnly cookie, stored **hashed** on the `User` row. `/auth/refresh` and `/auth/logout` authenticate via the cookie only (not the access token). Signup and login both set the cookie. `POST /auth/guest` is a separate, additive entry point: it exchanges a Supabase anonymous-auth session for a normal app session (same access/refresh tokens, same `Session` row) via `authService.issueSession` — a guest is a real `User` row (`id` = the Supabase user's id, `email`/`password` both null until they claim the account by adding and verifying an email, which just calls the existing `PATCH /user/profile`). 503s if `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` aren't set.
 
 **Diet generation**: `POST /diet/plan` → `dietService.generateDailyPlan` loads the user's `DietaryConstraint`, enforces one plan per UTC day, then `geminiService` computes target calories (Mifflin-St Jeor × 1.2 + goal modifier, 1200 floor), sanitises `preferences` into the prompt, validates Gemini's JSON with zod (exactly 5 meals, calories within 10% of target, retried once) and computes totals from the meals. Plan dates are UTC midnight everywhere.
 

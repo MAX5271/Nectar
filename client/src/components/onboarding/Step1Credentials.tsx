@@ -1,84 +1,116 @@
 import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { type NectarPayload } from '../../types';
 import { useSmartNavigate } from '../../hooks/useSmartNavigate';
+import { Field } from '../ui/Field';
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
+import { IconButton } from '../ui/IconButton';
 
 interface StepProps {
   payload: NectarPayload;
-  updatePayload: (data: Partial<NectarPayload>) => void;// broadcast changes up the stream
+  updatePayload: (data: Partial<NectarPayload>) => void;
   nextStep: () => void;
+  notice?: string;
 }
-//: React.FC<StepProps> (TypeScript)
-// Strictly defines this function as a React UI component and guarantees it only accepts the exact data wires defined in your StepProps interface.
-const Step1Credentials: React.FC<StepProps> = ({ payload, updatePayload, nextStep }) => {
 
+const Step1Credentials: React.FC<StepProps> = ({ payload, updatePayload, nextStep, notice }) => {
   const navigate = useSmartNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmError, setConfirmError] = useState('');
 
   const handleContinue = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!payload.email || !payload.username || (!payload.password && payload.authProvider === 'local')) return;
+
+    if (payload.authProvider === 'local' && payload.password !== confirmPassword) {
+      setConfirmError("Passwords don't match.");
+      return;
+    }
+
+    setConfirmError('');
     nextStep();
   };
 
   return (
     <>
-    <form onSubmit={handleContinue} className="flex flex-col gap-6 animate-in fade-in duration-500">
-      <div className="mb-4 border-l-4 border-red-600 pl-4">
-        <h2 className="text-lg font-black uppercase tracking-widest text-white">Identification</h2>
-        <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">Establish system credentials</p>
-      </div>
+      <form onSubmit={handleContinue} className="flex flex-col gap-5">
+        <div className="mb-1">
+          <h2 className="font-display text-xl font-semibold text-ink">Create your account</h2>
+          <p className="mt-1 text-sm text-ink-soft">Let's start with the basics.</p>
+        </div>
 
-      <div className="flex flex-col gap-2">
-        <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">Username</label>
-        <input 
-          type="text" required value={payload.username}
-          onChange={(e) => updatePayload({ username: e.target.value })}
-          className="border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-white outline-none transition-colors focus:border-red-600"
-          placeholder="USER_ALIAS"
-        />
-      </div>
+        {notice && (
+          <p role="alert" className="rounded-md border border-tomato/30 bg-tomato/5 px-4 py-3 text-sm text-tomato">
+            {notice}
+          </p>
+        )}
 
-      <div className="flex flex-col gap-2">
-        <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">Secure Email</label>
-        <input 
-          type="email" required value={payload.email}
-          onChange={(e) => updatePayload({ email: e.target.value })}
-          className="border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-white outline-none transition-colors focus:border-red-600"
-          placeholder="TRANSMISSION@NODE.NET"
-        />
-      </div>
+        <Field label="Username">
+          <Input
+            type="text"
+            required
+            value={payload.username}
+            onChange={(e) => updatePayload({ username: e.target.value })}
+            placeholder="How should we call you?"
+          />
+        </Field>
 
-      <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">
-                Security Key
-              </label>
-              <button 
-                type="button" 
-                onClick={() => setShowPassword(!showPassword)}
-                className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 transition-colors hover:text-white focus:outline-none"
-              >
-                [{showPassword ? 'Hide' : 'Show'}]
-              </button>
-            </div>
-            <input 
-              type={showPassword ? "text" : "password"} 
+        <Field label="Email">
+          <Input
+            type="email"
+            required
+            value={payload.email}
+            onChange={(e) => updatePayload({ email: e.target.value })}
+            placeholder="you@example.com"
+          />
+        </Field>
+
+        <Field label="Password">
+          <div className="relative">
+            <Input
+              type={showPassword ? 'text' : 'password'}
               required
               value={payload.password}
               onChange={(e) => updatePayload({ password: e.target.value })}
-              className="border-2 border-zinc-800 bg-zinc-950 px-4 py-3 text-white placeholder-zinc-700 outline-none transition-colors focus:border-red-600"
-              placeholder="CREATE A SECURE PHRASE"
+              placeholder="Create a password"
+              className="pr-11"
             />
+            <IconButton
+              type="button"
+              label={showPassword ? 'Hide password' : 'Show password'}
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </IconButton>
           </div>
+        </Field>
 
-      <div className="mt-4 flex flex-col gap-4">
-        <button type="submit" className="w-full transform bg-red-600 px-8 py-4 text-sm font-black uppercase tracking-widest text-black transition-all hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-0 active:shadow-none">
-          Proceed to Biometrics
+        <Field label="Confirm password" error={confirmError}>
+          <Input
+            type={showPassword ? 'text' : 'password'}
+            required
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              if (confirmError) setConfirmError('');
+            }}
+            placeholder="Type it again"
+          />
+        </Field>
+
+        <Button type="submit" variant="primary" size="lg" className="mt-2 w-full">
+          Continue
+        </Button>
+      </form>
+      <p className="mt-6 text-center text-sm text-ink-soft">
+        Already have an account?{' '}
+        <button type="button" onClick={() => navigate('/login')} className="font-medium text-beet hover:underline">
+          Log in
         </button>
-      </div>
-    </form>
-    <p className=" m-4 text-center text-xs font-bold uppercase tracking-widest text-zinc-500">
-              Already a user? <a onClick={()=>navigate('/login')} className="text-red-600 transition-colors hover:text-white">Continue Here</a></p>
+      </p>
     </>
   );
 };

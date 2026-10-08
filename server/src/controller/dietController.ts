@@ -1,7 +1,7 @@
 import { dietService } from "../services/dietService.js";
 import type { Response, Request } from "express";
 import StatusCode from "../utils/statusCodes.js";
-import { mealSwapSchema } from "../utils/validation.js";
+import { mealSwapSchema, trendQuerySchema } from "../utils/validation.js";
 
 class DietController {
   async dietPlan(req: Request, res: Response): Promise<void> {
@@ -35,7 +35,10 @@ class DietController {
   }
 
   async getDietPlanHistory(req: Request, res: Response): Promise<void> {
-    const result = await dietService.getDietPlanHistory(req.id as string);
+    // "days" here means "most recent N plans" (matches the existing behavior), not a calendar-day window —
+    // a user can skip days without generating a plan, so it's a row limit, not a date filter.
+    const { days } = trendQuerySchema.parse(req.query);
+    const result = await dietService.getDietPlanHistory(req.id as string, days);
     res.status(StatusCode.SUCCESS).json({
       success: true,
       data: result,

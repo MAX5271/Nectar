@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
+import { Menu, X } from 'lucide-react';
 import { useSmartNavigate } from '../hooks/useSmartNavigate';
 import { useAppSelector } from '../hooks/reduxHooks';
+import { Logo } from './Logo';
+import { Button } from './ui/Button';
+import { IconButton } from './ui/IconButton';
 
 const Header: React.FC = () => {
   const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
@@ -10,86 +14,78 @@ const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const routes = {
+    'Home': '/',
     'Dashboard': '/dashboard',
-    'Diet Plan': '/diet-history',
-    'Home' : '/'
-  }
+    'Progress': '/progress',
+    'About': '/about',
+  };
 
-  // writing as const after the array means that the array won't change after initialization
-  const navItems = ['Home','Dashboard', 'Diet Plan',] as const;
+  const navItems = ['Home', 'Dashboard', 'Progress', 'About'] as const;
 
   const handleRoutes = (item: keyof typeof routes) => {
-    navigate(routes[item] as string);
+    navigate(routes[item]);
     setIsMobileMenuOpen(false);
-  }
+  };
+
+  const ctaTarget = isAuthenticated ? '/dashboard' : '/register';
+  const ctaLabel = isAuthenticated ? 'Your plan' : 'Get started';
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b-4 border-red-600 bg-black">
+    <header className="sticky top-0 z-40 w-full border-b border-line bg-bone/95 backdrop-blur-sm">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
-        
-        <div onClick={() => navigate('/')} className="flex cursor-pointer items-center gap-4 transition-transform hover:scale-105">
-          <div className="flex h-12 w-12 items-center justify-center bg-red-600 text-2xl font-black text-black shadow-[4px_4px_0px_0px_rgba(255,255,255,0.2)]">
-            N/
-          </div>
-          <span className="text-3xl font-black uppercase tracking-widest text-white">
-            Nectar
-          </span>
-        </div>
+        <button onClick={() => navigate('/')} className="flex items-center transition-opacity hover:opacity-80" aria-label="Nectar, go to home">
+          <Logo />
+        </button>
 
         <nav className="hidden md:block">
-          <ul className="flex items-center gap-10 text-sm font-bold uppercase tracking-widest text-zinc-500">
+          <ul className="flex items-center gap-9 text-sm font-medium text-ink-soft">
             {navItems.map((item) => (
               <li key={item}>
                 <a
                   onClick={() => handleRoutes(item)}
-                  className="group relative cursor-pointer py-2 transition-colors hover:text-white"
+                  className="group relative cursor-pointer py-2 transition-colors hover:text-ink"
                 >
                   {item}
-                  <span className="absolute bottom-0 left-0 h-1 w-0 bg-red-600 transition-all duration-300 ease-out group-hover:w-full"></span>
+                  <span className="absolute bottom-0 left-0 h-0.5 w-0 bg-beet transition-all duration-300 ease-out group-hover:w-full"></span>
                 </a>
               </li>
             ))}
           </ul>
         </nav>
 
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-4">
           {!isAuthenticated ? (
-            <button onClick={() => navigate('/login')} className="hidden text-sm font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:text-white sm:block">
+            <button onClick={() => navigate('/login')} className="hidden text-sm font-medium text-ink-soft transition-colors hover:text-ink sm:block">
               Log in
             </button>
           ) : (
-            <button onClick={() => navigate('/dashboard')} className="hidden text-sm font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:text-white sm:block">
+            <button onClick={() => navigate('/dashboard')} className="hidden text-sm font-medium text-ink-soft transition-colors hover:text-ink sm:block">
               {username}
             </button>
           )}
-          
-          <button onClick={() => navigate('/about')} className="hidden transform bg-red-600 px-8 py-3 text-sm font-black uppercase tracking-widest text-black transition-all hover:-translate-y-1 hover:bg-red-500 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-0 active:shadow-none md:block">
-            Initialize
-          </button>
-          
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="block p-2 text-white hover:text-red-600 md:hidden"
+
+          <Button variant="primary" size="sm" onClick={() => navigate(ctaTarget)} className="hidden md:inline-flex">
+            {ctaLabel}
+          </Button>
+
+          <IconButton
+            label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+            onClick={() => setIsMobileMenuOpen((open) => !open)}
+            className="md:hidden"
           >
-            <svg className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-              {isMobileMenuOpen ? (
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="square" strokeLinejoin="miter" d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </IconButton>
         </div>
       </div>
 
       {isMobileMenuOpen && (
-        <nav className="border-t border-zinc-800 bg-black px-6 py-4 md:hidden">
-          <ul className="flex flex-col gap-4 text-sm font-bold uppercase tracking-widest text-zinc-500">
+        <nav className="border-t border-line bg-bone px-6 py-4 md:hidden">
+          <ul className="flex flex-col gap-1 text-sm font-medium text-ink-soft">
             {navItems.map((item) => (
               <li key={item}>
                 <a
                   onClick={() => handleRoutes(item)}
-                  className="block cursor-pointer py-2 transition-colors hover:text-white"
+                  className="block cursor-pointer py-2.5 transition-colors hover:text-ink"
                 >
                   {item}
                 </a>
@@ -97,30 +93,31 @@ const Header: React.FC = () => {
             ))}
             {!isAuthenticated ? (
               <li>
-                <button 
-                  onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }} 
-                  className="block w-full py-2 text-left uppercase tracking-wider transition-colors hover:text-white"
+                <button
+                  onClick={() => { navigate('/login'); setIsMobileMenuOpen(false); }}
+                  className="block w-full py-2.5 text-left transition-colors hover:text-ink"
                 >
                   Log in
                 </button>
               </li>
             ) : (
               <li>
-                <button 
-                  onClick={() => { navigate('/dashboard'); setIsMobileMenuOpen(false); }} 
-                  className="block w-full py-2 text-left uppercase tracking-wider transition-colors hover:text-white"
+                <button
+                  onClick={() => { navigate('/dashboard'); setIsMobileMenuOpen(false); }}
+                  className="block w-full py-2.5 text-left transition-colors hover:text-ink"
                 >
                   {username}
                 </button>
               </li>
             )}
-            <li className="pt-2">
-              <button 
-                onClick={() => { navigate('/about'); setIsMobileMenuOpen(false); }} 
-                className="w-full transform bg-red-600 px-8 py-3 text-center text-sm font-black uppercase tracking-widest text-black transition-all hover:-translate-y-1 hover:bg-red-500 hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] active:translate-y-0 active:shadow-none"
+            <li className="pt-3">
+              <Button
+                variant="primary"
+                className="w-full"
+                onClick={() => { navigate(ctaTarget); setIsMobileMenuOpen(false); }}
               >
-                Initialize
-              </button>
+                {ctaLabel}
+              </Button>
             </li>
           </ul>
         </nav>

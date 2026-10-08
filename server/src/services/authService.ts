@@ -1,8 +1,10 @@
 import { authRepository } from "../repository/authRepository.js";
 import { sessionRepository } from "../repository/sessionRepository.js";
+import { userRepository } from "../repository/userRepository.js";
 import { jwtHelper } from "../utils/jwtHelper.js";
 import { HttpError } from "../utils/httpError.js";
 import StatusCode from "../utils/statusCodes.js";
+import { supabaseService } from "./supabaseService.js";
 
 interface LoginData {
   email: string;
@@ -11,27 +13,39 @@ interface LoginData {
   ipAddress?: string | undefined;
 }
 
+interface SessionMeta {
+  userAgent?: string | undefined;
+  ipAddress?: string | undefined;
+}
+
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 class AuthService {
-  async login({ email, password, userAgent, ipAddress }: LoginData) {
-    const user = await authRepository.login(email, password);
-    const accessToken = jwtHelper.accessTokenGenerator(user.id);
-    const refreshToken = jwtHelper.refreshTokenGenerator(user.id);
+  // Shared by every way of establishing a session (password login, guest login, signup —
+  // see userService.signUp) so token minting/hashing/Session-row creation happens in one place.
+  private async issueSession(userId: string, { userAgent, ipAddress }: SessionMeta) {
+    const accessToken = jwtHelper.accessTokenGenerator(userId);
+    const refreshToken = jwtHelper.refreshTokenGenerator(userId);
     const hashed = jwtHelper.hashToken(refreshToken);
 
     // Maintain legacy token field
-    await authRepository.updateRefreshToken(user.id, hashed);
+    await authRepository.updateRefreshToken(userId, hashed);
 
-    // Create session
     const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
     await sessionRepository.createSession({
-      userId: user.id,
+      userId,
       refreshToken: hashed,
       expiresAt,
       userAgent,
       ipAddress,
     });
+
+    return { accessToken, refreshToken };
+  }
+
+  async login({ email, password, userAgent, ipAddress }: LoginData) {
+    const user = await authRepository.login(email, password);
+    const { accessToken, refreshToken } = await this.issueSession(user.id, { userAgent, ipAddress });
 
     return {
       accessToken,
@@ -40,6 +54,45 @@ class AuthService {
       id: user.id,
       email: user.email,
     };
+  }
+
+  // Exchanges a Supabase session (anonymous or email/password) for an app session — same
+  // shape as login(). Safe to call repeatedly for the same identity: the underlying User
+  // row already exists after the first call, so later calls just issue a fresh session.
+  async loginWithSupabase(
+    supabaseAccessToken: string,
+    { userAgent, ipAddress }: SessionMeta,
+    initialProfile?: any,
+  ) {
+    const identity = await supabaseService.verifyToken(supabaseAccessToken);
+    const profile = initialProfile || {
+      age: identity.userMetadata?.age,
+      gender: identity.userMetadata?.gender,
+      height: identity.userMetadata?.height,
+      weight: identity.userMetadata?.weight,
+      unitSystem: identity.userMetadata?.unitSystem,
+      planType: identity.userMetadata?.planType,
+      preferences: identity.userMetadata?.preferences,
+    };
+    const user = await userRepository.upsertSupabaseUser({
+      id: identity.id,
+      email: identity.email,
+      username: identity.username,
+      profile,
+    });
+    const { accessToken, refreshToken } = await this.issueSession(user.id, { userAgent, ipAddress });
+
+    return {
+      accessToken,
+      refreshToken,
+      username: user.username,
+      id: user.id,
+      email: user.email,
+    };
+  }
+
+  async loginAsGuest(supabaseAccessToken: string, meta: SessionMeta) {
+    return this.loginWithSupabase(supabaseAccessToken, meta);
   }
 
   async refreshToken(token: string) {
@@ -102,8 +155,17 @@ class AuthService {
     }
   }
 
-  async getSessions(userId: string) {
-    return await sessionRepository.getUserSessions(userId);
+  async getSessions(userId: string, currentToken?: string | undefined) {
+    const sessions = await sessionRepository.getUserSessions(userId);
+
+    if (!currentToken) {
+      return sessions.map((s) => ({ ...s, isCurrent: false }));
+    }
+
+    // Identify which row belongs to the device making this request, without ever
+    // exposing a session's hashed token back to the client.
+    const current = await sessionRepository.findSessionByToken(jwtHelper.hashToken(currentToken));
+    return sessions.map((s) => ({ ...s, isCurrent: current?.id === s.id }));
   }
 
   async revokeSession(userId: string, sessionId: string) {

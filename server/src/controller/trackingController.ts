@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { trackingService } from "../services/trackingService.js";
-import { logWeightSchema, logMealSchema } from "../utils/validation.js";
+import { logWeightSchema, logMealSchema, trendQuerySchema } from "../utils/validation.js";
 import StatusCode from "../utils/statusCodes.js";
 
 class TrackingController {
@@ -16,8 +16,8 @@ class TrackingController {
   }
 
   async getWeightTrend(req: Request, res: Response): Promise<void> {
-    const days = req.query.days ? Number(req.query.days) : 60;
-    const result = await trackingService.getWeightTrend(req.id as string, days);
+    const { days } = trendQuerySchema.parse(req.query);
+    const result = await trackingService.getWeightTrend(req.id as string, days ?? 60);
 
     res.status(StatusCode.SUCCESS).json({
       success: true,
@@ -39,6 +39,16 @@ class TrackingController {
   async getDailyMealLogs(req: Request, res: Response): Promise<void> {
     const dateStr = req.query.date as string | undefined;
     const result = await trackingService.getDailyMealLogs(req.id as string, dateStr);
+
+    res.status(StatusCode.SUCCESS).json({
+      success: true,
+      data: result,
+    });
+  }
+
+  async getMealAdherenceTrend(req: Request, res: Response): Promise<void> {
+    const { days } = trendQuerySchema.parse(req.query);
+    const result = await trackingService.getMealAdherenceTrend(req.id as string, days ?? 30);
 
     res.status(StatusCode.SUCCESS).json({
       success: true,

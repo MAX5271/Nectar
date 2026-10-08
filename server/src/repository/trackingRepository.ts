@@ -75,6 +75,36 @@ class TrackingRepository {
       orderBy: { date: "asc" },
     });
   }
+
+  /** Finds an existing log for the same meal on the same day, so repeated toggles update it in place instead of piling up duplicate rows. */
+  async findMealLogForDay(
+    userId: string,
+    dietPlanId: string | null,
+    mealType: MealType,
+    name: string,
+    startDate: Date,
+    endDate: Date,
+  ) {
+    return await prisma.mealLog.findFirst({
+      where: {
+        userId,
+        dietPlanId,
+        mealType,
+        name,
+        date: { gte: startDate, lte: endDate },
+      },
+    });
+  }
+
+  async updateMealLog(
+    id: string,
+    data: { calories: number; protein: number; carbs: number; fat: number; adhered: boolean },
+  ) {
+    return await prisma.mealLog.update({
+      where: { id },
+      data,
+    });
+  }
 }
 
 export const trackingRepository = new TrackingRepository();

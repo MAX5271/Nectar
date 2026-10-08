@@ -1,4 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { AlertTriangle } from "lucide-react";
+import { Card } from "../ui/Card";
+import { Button } from "../ui/Button";
 
 interface Props {
   children: ReactNode;
@@ -21,7 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("[SYSTEM ERROR CAUGHT BY BOUNDARY]", error, errorInfo);
+    console.error("Error caught by boundary:", error, errorInfo);
   }
 
   public render() {
@@ -31,32 +34,30 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center p-6">
-          <div className="border-4 border-red-600 bg-black p-8 max-w-lg w-full shadow-[8px_8px_0px_0px_rgba(255,0,0,0.3)]">
-            <h2 className="text-xl font-black uppercase tracking-widest text-red-500 mb-4 border-b-2 border-zinc-800 pb-2">
-              [ Critical Interface Fault ]
-            </h2>
-            <p className="text-xs font-mono text-zinc-400 mb-6 leading-relaxed">
-              {this.state.error?.message || "An unexpected system anomaly occurred."}
+        <div className="flex min-h-screen items-center justify-center bg-linen p-6 text-ink">
+          <Card variant="quiet" padding="lg" className="w-full max-w-lg">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-6 w-6 text-tomato" aria-hidden="true" />
+              <h2 className="font-display text-xl font-semibold text-ink">Something went wrong</h2>
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-ink-soft">
+              {this.state.error?.message || "This page ran into a problem loading."}
             </p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => window.location.reload()}
-                className="flex-1 py-3 bg-red-600 text-black font-black uppercase tracking-widest text-xs hover:bg-red-500 transition-colors"
-              >
-                Reboot System
-              </button>
-              <button
+            <div className="mt-6 flex gap-3">
+              <Button variant="primary" onClick={() => window.location.reload()}>
+                Reload page
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={() => {
                   this.setState({ hasError: false, error: null });
                   window.location.href = "/";
                 }}
-                className="flex-1 py-3 border-2 border-zinc-700 text-zinc-300 font-black uppercase tracking-widest text-xs hover:border-zinc-500 hover:text-white transition-colors"
               >
-                Return to Base
-              </button>
+                Go home
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       );
     }

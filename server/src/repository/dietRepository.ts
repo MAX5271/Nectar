@@ -47,11 +47,11 @@ class DietRepository {
     return withDietCompat(plan);
   }
 
-  async getDietPlanHistory(userId: string) {
+  async getDietPlanHistory(userId: string, limit = 7) {
     const plans = await prisma.dietPlan.findMany({
       where: { userId },
       orderBy: { date: "desc" },
-      take: 7,
+      take: limit,
       include: { diets: true },
     });
     return plans.map((p) => withDietCompat(p)!);

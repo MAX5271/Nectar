@@ -1,13 +1,14 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAppSelector } from '../hooks/reduxHooks';
+import Loader from './Loader';
 
 const ProtectedRoute = () => {
   const { isAuthenticated, isInitialized } = useAppSelector((state) => state.auth);
 
   if (!isInitialized) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-red-600 font-mono text-xs font-bold uppercase tracking-widest animate-pulse">
-        [INITIALIZING OPERATIVE SESSION...]
+      <div className="flex min-h-screen items-center justify-center bg-linen">
+        <Loader />
       </div>
     );
   }

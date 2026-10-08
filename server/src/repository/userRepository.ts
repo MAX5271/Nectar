@@ -4,6 +4,93 @@ import bcrypt from "bcrypt";
 import type { SignUpInput } from "../utils/validation.js";
 
 class UserRepository {
+  // Creates a bare User row for a guest, keyed to the Supabase identity's own id so no
+  // separate linking column is needed. Idempotent: a returning guest just re-fetches.
+  async upsertGuestUser(supabaseUserId: string) {
+    return await prisma.user.upsert({
+      where: { id: supabaseUserId },
+      update: {},
+      create: {
+        id: supabaseUserId,
+        username: `Guest ${supabaseUserId.slice(0, 4)}`,
+        email: null,
+        password: null,
+      },
+    });
+  }
+
+  async upsertSupabaseUser({
+    id,
+    email,
+    username,
+    profile,
+  }: {
+    id: string;
+    email: string | null;
+    username?: string | null | undefined;
+    profile?: any;
+  }) {
+    // 1. Check if user already exists by Supabase ID
+    const existingById = await prisma.user.findUnique({
+      where: { id },
+      include: { constraint: true },
+    });
+
+    if (existingById) {
+      const updates: Prisma.UserUpdateInput = {};
+      if (email && existingById.email !== email) updates.email = email;
+      if (username && !existingById.username) updates.username = username;
+
+      const user = Object.keys(updates).length > 0
+        ? await prisma.user.update({ where: { id }, data: updates })
+        : existingById;
+
+      if (profile && !existingById.constraint && profile.age && profile.height && profile.weight) {
+        const { preferences = "", ...biometrics } = profile;
+        await prisma.dietaryConstraint.create({
+          data: {
+            userId: id,
+            preferences: preferences || "",
+            ...biometrics,
+          },
+        });
+      }
+
+      return user;
+    }
+
+    // 2. Check if an existing account has this email (e.g. from previous local signup)
+    if (email) {
+      const existingByEmail = await prisma.user.findUnique({
+        where: { email },
+        include: { constraint: true },
+      });
+      if (existingByEmail) {
+        return existingByEmail;
+      }
+    }
+
+    // 3. Create fresh user row
+    const initialUsername: string | null = (username ?? (email ? email.split("@")[0] : `User ${id.slice(0, 4)}`)) ?? null;
+    const createData: Prisma.UserCreateInput = {
+      id,
+      email,
+      username: initialUsername,
+    };
+
+    if (profile && profile.age && profile.height && profile.weight) {
+      const { preferences = "", ...biometrics } = profile;
+      createData.constraint = {
+        create: {
+          preferences: preferences || "",
+          ...biometrics,
+        },
+      };
+    }
+
+    return await prisma.user.create({ data: createData });
+  }
+
   async createUserWithConstraints(data: SignUpInput) {
     const { email, username, password, preferences, ...biometrics } = data;
     const duplicate = await prisma.user.findUnique({ where: { email } });

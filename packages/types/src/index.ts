@@ -143,9 +143,11 @@ export interface MealSwapRequestDTO {
 
 // Weight Trend Analysis DTO
 export interface WeightTrendPointDTO {
+  id: string;
   date: string;
   weight: number;
   movingAverage7Day: number;
+  note?: string | null;
 }
 
 export interface WeightTrendDTO {
@@ -154,6 +156,22 @@ export interface WeightTrendDTO {
   latestMovingAverage: number | null;
   weeklyChangeKg: number | null;
   direction: "LOSING" | "GAINING" | "MAINTAINING" | "INSUFFICIENT_DATA";
+}
+
+// Meal Adherence Trend DTO
+export interface MealAdherenceTrendPointDTO {
+  date: string;
+  totalLoggedMeals: number;
+  adheredMeals: number;
+  adherenceRatePercent: number | null;
+}
+
+export interface MealAdherenceTrendDTO {
+  days: number;
+  points: MealAdherenceTrendPointDTO[];
+  averageAdherenceRatePercent: number | null;
+  totalLoggedMeals: number;
+  daysWithLogs: number;
 }
 
 // Plan Explanation DTO
@@ -179,5 +197,16 @@ export interface PlanExplanationDTO {
   };
   safetyFloorApplied: boolean;
   medicalAdvisories: string[];
+}
+
+// Session DTO
+export interface SessionDTO {
+  id: string;
+  userAgent?: string | null;
+  ipAddress?: string | null;
+  expiresAt: string | Date;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  isCurrent: boolean;
 }
 

@@ -5,7 +5,7 @@
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["vite/client", "node"],
+    "types": ["vite/client", "node", "vitest/globals", "@testing-library/jest-dom"],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -21,5 +21,5 @@
     "noUncheckedSideEffectImports": true,
     "isolatedModules": true
   },
-  "include": ["src"]
+  "include": ["src", "tests"]
 }

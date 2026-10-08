@@ -48,8 +48,8 @@ class DietService {
     return dietRepository.getLatestDietPlan(userId);
   }
 
-  getDietPlanHistory(userId: string) {
-    return dietRepository.getDietPlanHistory(userId);
+  getDietPlanHistory(userId: string, limit?: number) {
+    return dietRepository.getDietPlanHistory(userId, limit);
   }
 
   async explainPlan(userId: string) {

@@ -1,27 +1,43 @@
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Check, Repeat } from 'lucide-react';
 import type { DietMealDTO, DietPlanDTO } from '@nectar/types';
 import { SwapMealModal } from './SwapMealModal';
+import { NectarDroplet } from '../nectar/NectarDroplet';
+import { NectarBadge } from '../ui/NectarBadge';
 import api from '../../services/api';
+import { notify } from '../../lib/toast';
+import { cn } from '../../lib/utils';
 
-interface MealCardProps {
+export interface MealCardProps {
   meal: DietMealDTO;
   onMealSwapped: (swappedMeal: DietMealDTO, updatedPlan: DietPlanDTO) => void;
   onAdherenceLogged?: () => void;
+  initialAdhered?: boolean;
+  timeSlot?: string;
+  className?: string;
 }
 
 export const MealCard: React.FC<MealCardProps> = ({
   meal,
   onMealSwapped,
   onAdherenceLogged,
+  initialAdhered = false,
+  timeSlot,
+  className,
 }) => {
   const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
-  const [isAdhered, setIsAdhered] = useState(false);
+  const [isAdhered, setIsAdhered] = useState(initialAdhered);
   const [isLogging, setIsLogging] = useState(false);
+
+  // Sync when parent server state resolves
+  useEffect(() => {
+    setIsAdhered(initialAdhered);
+  }, [initialAdhered]);
 
   const handleToggleAdherence = async () => {
     setIsLogging(true);
+    const nextState = !isAdhered;
     try {
-      const nextState = !isAdhered;
       await api.post('/tracking/meals', {
         name: meal.meal,
         mealType: meal.mealType || meal.type || 'LUNCH',
@@ -34,74 +50,112 @@ export const MealCard: React.FC<MealCardProps> = ({
       });
       setIsAdhered(nextState);
       onAdherenceLogged?.();
-    } catch (err) {
-      console.error('Failed to log adherence', err);
+    } catch {
+      notify.error("Couldn't save adherence. Please try again.");
     } finally {
       setIsLogging(false);
     }
   };
 
+  const mealTypeLabel = (meal.mealType || meal.type || 'MEAL').toUpperCase();
+
   return (
     <>
-      <div className={`border-2 bg-black p-5 transition-all ${isAdhered ? 'border-green-600/70 bg-zinc-950/60' : 'border-zinc-800 hover:border-zinc-700'}`}>
+      <div
+        className={cn(
+          'group relative rounded-2xl border transition-all duration-300 p-5 sm:p-6 bg-bone-light/80 shadow-warm-sm',
+          isAdhered
+            ? 'border-herb/40 bg-herb-subtle/30 shadow-none'
+            : 'border-line hover:border-line-subtle hover:shadow-warm-md hover:bg-bone-light',
+          className,
+        )}
+      >
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-          <div className="max-w-xl">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="inline-block bg-zinc-900 text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest border border-zinc-800">
-                {meal.type || meal.mealType}
+          {/* Left: Meal Meta & Protagonist Title */}
+          <div className="flex-1 min-w-0">
+            {/* Header: Slot + Type Tag + Adherence Indicator */}
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              {timeSlot && (
+                <span className="text-[11px] font-mono text-ink-muted uppercase tracking-wider">
+                  {timeSlot}
+                </span>
+              )}
+              {timeSlot && <span className="text-line">•</span>}
+              <span className="text-[11px] font-mono font-semibold tracking-wider text-honey-dark uppercase">
+                {mealTypeLabel}
               </span>
+
               {isAdhered && (
-                <span className="inline-block bg-green-950/60 text-green-400 border border-green-800 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest">
-                  Logged / Consumed
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono text-herb font-medium bg-herb-subtle px-2 py-0.5 rounded-full border border-herb/25">
+                  <Check className="h-3 w-3" /> Logged
                 </span>
               )}
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">{meal.meal}</h3>
-            <p className="text-sm text-zinc-400 font-medium leading-relaxed">
-              <span className="text-zinc-600 font-bold uppercase text-xs">Portion:</span> {meal.portion}
+
+            {/* Protagonist Meal Title */}
+            <h3
+              className={cn(
+                'font-display text-xl sm:text-2xl font-normal tracking-tight text-ink transition-all',
+                isAdhered && 'text-ink-muted/80 line-through decoration-herb/40',
+              )}
+            >
+              {meal.meal}
+            </h3>
+
+            {/* Portion / Serving size */}
+            <p className="mt-1 text-sm font-sans text-ink-muted">
+              {meal.portion}
             </p>
+
+            {/* Monospaced Nutrition Data Pills */}
+            <div className="flex flex-wrap items-center gap-2 mt-4">
+              <NectarBadge variant="calorie" size="sm">
+                <span className="font-semibold">{meal.calories}</span> kcal
+              </NectarBadge>
+              <NectarBadge variant="protein" size="sm">
+                P <span className="font-semibold ml-0.5">{meal.protein}g</span>
+              </NectarBadge>
+              <NectarBadge variant="carb" size="sm">
+                C <span className="font-semibold ml-0.5">{meal.carb}g</span>
+              </NectarBadge>
+              <NectarBadge variant="fat" size="sm">
+                F <span className="font-semibold ml-0.5">{meal.fat}g</span>
+              </NectarBadge>
+            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-end md:items-center gap-4">
-            <div className="grid grid-cols-4 gap-3 bg-zinc-950 p-3 border border-zinc-900 shrink-0 text-center">
-              <div>
-                <span className="block text-[10px] text-zinc-600 uppercase font-bold">Cal</span>
-                <span className="font-bold text-red-500 text-sm">{meal.calories}</span>
-              </div>
-              <div>
-                <span className="block text-[10px] text-zinc-600 uppercase font-bold">Pro</span>
-                <span className="font-bold text-sm">{meal.protein}g</span>
-              </div>
-              <div>
-                <span className="block text-[10px] text-zinc-600 uppercase font-bold">Carb</span>
-                <span className="font-bold text-sm">{meal.carb}g</span>
-              </div>
-              <div>
-                <span className="block text-[10px] text-zinc-600 uppercase font-bold">Fat</span>
-                <span className="font-bold text-sm">{meal.fat}g</span>
-              </div>
-            </div>
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2.5 sm:self-start shrink-0 pt-1">
+            {/* Adherence Button (Accessible and matching test contract: 'Mark eaten' / 'Eaten') */}
+            <button
+              onClick={handleToggleAdherence}
+              disabled={isLogging}
+              className={cn(
+                'inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-sans font-medium transition-all duration-200 select-none cursor-pointer',
+                'focus-visible:outline-2 focus-visible:outline-beet focus-visible:outline-offset-2',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+                isAdhered
+                  ? 'bg-herb text-bone hover:bg-herb-dark shadow-warm-sm'
+                  : 'bg-bone text-ink border border-line hover:border-herb/60 hover:text-herb shadow-warm-sm',
+              )}
+            >
+              <NectarDroplet
+                state={isAdhered ? 'filled' : 'hollow'}
+                color={isAdhered ? 'herb' : 'ink'}
+                size="xs"
+              />
+              <span>{isAdhered ? 'Eaten' : 'Mark eaten'}</span>
+            </button>
 
-            <div className="flex flex-row md:flex-col gap-2 w-full sm:w-auto">
-              <button
-                onClick={handleToggleAdherence}
-                disabled={isLogging}
-                className={`flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
-                  isAdhered
-                    ? 'bg-green-700 text-white hover:bg-green-600'
-                    : 'bg-zinc-900 text-zinc-300 border border-zinc-800 hover:border-green-600 hover:text-white'
-                }`}
-                title="Mark this meal as consumed"
-              >
-                {isLogging ? 'Logging...' : isAdhered ? '✓ Eaten' : 'Mark Eaten'}
-              </button>
-              <button
-                onClick={() => setIsSwapModalOpen(true)}
-                className="flex-1 sm:flex-none px-3 py-2 text-[10px] font-black uppercase tracking-widest bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:border-red-600 transition-colors"
-              >
-                ↻ Swap
-              </button>
-            </div>
+            {/* Swap Meal Button */}
+            <button
+              onClick={() => setIsSwapModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-sans font-medium text-ink-muted hover:text-ink hover:bg-bone border border-line transition-colors select-none"
+              title="Swap this meal"
+            >
+              <Repeat className="h-3.5 w-3.5" />
+              <span>Swap</span>
+            </button>
           </div>
         </div>
       </div>

@@ -75,3 +75,35 @@ export const logMealSchema = z.object({
 
 export type LogMealInput = z.infer<typeof logMealSchema>;
 
+export const trendQuerySchema = z.object({
+  days: z.coerce.number().int().positive().max(365).optional(),
+});
+
+export type TrendQueryInput = z.infer<typeof trendQuerySchema>;
+
+export const guestLoginSchema = z.object({
+  supabaseAccessToken: z.string().min(1, "supabaseAccessToken is required"),
+});
+
+export type GuestLoginInput = z.infer<typeof guestLoginSchema>;
+
+export const supabaseSessionSchema = z.object({
+  supabaseAccessToken: z.string().min(1, "supabaseAccessToken is required"),
+  profile: z
+    .object({
+      age: z.coerce.number().int().min(13).max(120).optional(),
+      gender: z.enum(["MALE", "FEMALE"]).optional(),
+      height: z.coerce.number().positive().optional(),
+      weight: z.coerce.number().positive().optional(),
+      unitSystem: z.enum(["METRIC", "IMPERIAL"]).optional(),
+      planType: z.enum(["CUTTING", "BULKING", "RECOMP"]).optional(),
+      activityLevel: z
+        .enum(["SEDENTARY", "LIGHT", "MODERATE", "VERY_ACTIVE", "EXTRA_ACTIVE"])
+        .optional(),
+      preferences: z.string().optional(),
+    })
+    .optional(),
+});
+
+export type SupabaseSessionInput = z.infer<typeof supabaseSessionSchema>;
+

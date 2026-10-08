@@ -3,17 +3,27 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19.2-cyan.svg)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4.2-38bdf8.svg)](https://tailwindcss.com/)
 [![Prisma](https://img.shields.io/badge/Prisma-6.4-indigo.svg)](https://www.prisma.io/)
-[![Vitest](https://img.shields.io/badge/Tests-56%20Passed-brightgreen.svg)](https://vitest.dev/)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20&%20Guest-3ecf8e.svg)](https://supabase.com/)
+[![Vitest](https://img.shields.io/badge/Tests-Client%20&%20Server%20Passing-brightgreen.svg)](https://vitest.dev/)
 [![License](https://img.shields.io/badge/License-ISC-black.svg)](#license)
 
-**NECTAR** is a production-grade, medically guardrailed metabolic nutrition system and daily dietary command center. It combines server-side clinical nutrition algorithms (Mifflin-St Jeor BMR, dynamic activity scaling, eating-disorder guardrails, and deterministic allergy scanning) with Google's **Gemini 2.5 Flash** generative model to deliver structured, macro-precise daily diet protocols.
+**NECTAR** is a production-grade, medically guardrailed metabolic nutrition system and daily dietary command center. It bridges clinical nutrition algorithms (Mifflin-St Jeor BMR, dynamic activity scaling, eating-disorder guardrails, and deterministic 9-category allergen scanning) with Google's **Gemini 2.5 Flash** generative model to deliver structured, macro-precise daily diet protocols.
+
+The frontend is an **identity-first personal nutrition cockpit**:
+> **Editorial food journal × precision nutrition cockpit × calm personal software**  
+> *"The user's food plan is the main character. Everything else is instrumentation."*
 
 ---
 
 ## 📑 Table of Contents
 
 - [Architecture & Monorepo Structure](#-architecture--monorepo-structure)
+- [The Nectar Identity & Design System](#-the-nectar-identity--design-system)
+- [Application Shell & Canonical Routing](#-application-shell--canonical-routing)
+- [Workspace Surfaces](#-workspace-surfaces)
+- [Authentication Architecture (Hybrid Supabase & Native JWT)](#-authentication-architecture-hybrid-supabase--native-jwt)
 - [Prerequisites](#-prerequisites)
 - [Local Setup & Getting Started](#-local-setup--getting-started)
   - [1. Clone and Install Dependencies](#1-clone-and-install-dependencies)
@@ -22,11 +32,11 @@
   - [4. Launch the Development Environment](#4-launch-the-development-environment)
 - [Complete API Reference](#-complete-api-reference)
   - [Response Envelope Format](#response-envelope-format)
-  - [System & Health](#1-system--health)
-  - [Authentication & Sessions](#2-authentication--sessions)
-  - [User & Biometric Profile](#3-user--biometric-profile)
-  - [Diet Protocol & Meal Swapping](#4-diet-protocol--meal-swapping)
-  - [Tracking & Analytics](#5-tracking--analytics)
+  - [1. System & Health](#1-system--health)
+  - [2. Authentication & Sessions](#2-authentication--sessions)
+  - [3. User & Biometric Profile](#3-user--biometric-profile)
+  - [4. Diet Protocol & Meal Swapping](#4-diet-protocol--meal-swapping)
+  - [5. Tracking & Analytics](#5-tracking--analytics)
 - [Security & Clinical Safety Guardrails](#-security--clinical-safety-guardrails)
 - [Verification & Quality Commands](#-verification--quality-commands)
 - [Performance Benchmarks](#-performance-benchmarks)
@@ -42,27 +52,165 @@ Nectar/
 ├── packages/
 │   └── types/               # Shared TypeScript DTOs, enums, and API response contracts (@nectar/types)
 ├── server/                  # Node.js + Express 5 + TypeScript + Prisma API
-│   ├── prisma/              # PostgreSQL schema definitions and migrations
+│   ├── prisma/              # PostgreSQL schema definitions, client migrations
 │   ├── src/
 │   │   ├── config.ts        # Centralized, Zod-validated configuration singleton
-│   │   ├── app.ts           # Express application setup, security headers, CORS, middlewares
+│   │   ├── app.ts           # Express setup, security headers, CORS, middlewares
 │   │   ├── index.ts         # Server lifecycle & graceful SIGTERM/SIGINT shutdown
-│   │   ├── controller/      # Route controllers (Auth, User, Diet, Tracking)
-│   │   ├── middleware/      # Rate limiters, JWT verification, request logging, error handling
+│   │   ├── controller/      # Controllers (Auth, User, Diet, Tracking)
+│   │   ├── middleware/      # Rate limiters, JWT verification, logging, error handling
 │   │   ├── repository/      # Prisma database access layer
 │   │   ├── routes/          # Express route definitions
-│   │   ├── services/        # Business logic (Gemini AI, Mifflin-St Jeor math, allergy scanning)
-│   │   └── utils/           # Guardrails, cookie helpers, status codes, validations
-│   └── tests/               # Vitest test suite (Unit, Contract, Integration)
+│   │   ├── services/        # Business logic (Gemini AI, Supabase Admin, Mifflin-St Jeor math, allergen scanning)
+│   │   └── utils/           # Guardrails, Supabase helpers, cookie helpers, status codes, validations
+│   └── tests/               # Vitest suite (Unit, Contract, Guest Auth, User Flow Integration)
 ├── client/                  # React 19 + TypeScript + Vite + Tailwind CSS v4 + Redux Toolkit
 │   ├── src/
-│   │   ├── components/      # Common primitives, Error Boundaries, Dashboard widgets
-│   │   ├── pages/           # Route views (Dashboard, History, Login, Register)
-│   │   ├── services/        # Axios API client, silent refresh interceptor, auth flows
-│   │   └── store/           # Redux Toolkit store and state slices (authSlice, dietSlice)
+│   │   ├── components/
+│   │   │   ├── nectar/      # NectarDroplet, NectarLine, NectarMark, NectarGenerationModal
+│   │   │   ├── layout/      # AppSidebar, AppTopBar, MobileBottomNav, AuthenticatedLayout, PublicLayout
+│   │   │   ├── dashboard/   # DashboardHero, MealTimeline, MealCard, DailyBalance, WeightSnapshot, GuestClaim
+│   │   │   ├── progress/    # TrajectoryChart, AdherenceCalendar, NutritionConsistency
+│   │   │   ├── ui/          # NectarBadge, NectarProgress, NectarStat, NectarButton, Dialogs
+│   │   │   └── charts/      # Recharts historical trend visualizations
+│   │   ├── pages/
+│   │   │   ├── auth/        # LoginPage, Register, ForgotPassword, GuestOnboarding, AuthCallback
+│   │   │   └── ui/          # HomePage (Landing), Dashboard (Today), Progress, Meals, Profile, Security, About
+│   │   ├── services/        # Axios client, auth flow helpers, Supabase client
+│   │   └── store/           # Redux Toolkit store (authSlice, dietSlice)
 │   └── dist/                # Production Vite client bundle
 └── performance/             # Automated k6 load-testing and regression benchmark harness
 ```
+
+---
+
+## 🎨 The Nectar Identity & Design System
+
+Nectar's design language passes the **Screenshot Recognition Test**: *strip away logos and navigation labels, and the product is still immediately identifiable.*
+
+### The Six Identity Pillars
+
+1. **The Nectar Droplet**:
+   - Atomic SVG teardrop glyph with semantic states:
+     - `hollow`: Pending meal, upcoming milestone, or open input.
+     - `filled`: Completed meal, reached macro goal, or verified status.
+     - `active`: Accent glow, subtle pulse, or generative state.
+2. **The Nectar Line**:
+   - The physical visual rail connecting `Goal → Plan → Meal → Adherence → Trajectory`.
+   - In `MealTimeline`, the Nectar Line links meals chronologically from breakfast to dinner.
+   - In `Progress`, the line traces weight trajectories and 7-day moving averages.
+3. **Three-Tier Typography Stack**:
+   - **Display**: *Fraunces* — Warm, high-contrast serif for page statements, greetings, and meal titles.
+   - **Interface**: *DM Sans* — Clean, geometric sans-serif for controls, navigation, and dialogs.
+   - **Data Layer**: *IBM Plex Mono* — Crisp monospaced tabular numerals for macros (`P 32g  C 54g  F 18g`), calories, timestamps, and chart axes.
+4. **Nutrition Data Language**:
+   - Quantitative data follows strict instrumentation:
+     - `[UPPERCASE LABEL: 11px Mono/Sans, 60% opacity]`
+     - `[LARGE NUMERICAL VALUE: 24-32px Mono, ink] [UNIT: 14px Mono]`
+     - `[CONTEXTUAL DELTA: 12px Mono, herb/beet/turmeric]`
+5. **Food Editorial Language**:
+   - High-quality, close-crop culinary photography with natural textures, warm directional lighting, and authentic plating.
+6. **Calm Motion (Framer Motion)**:
+   - Motion is focused on moments of intent: plan synthesis droplet journey, 1-click meal adherence toggle pulse, and smooth page reveals. Full support for `prefers-reduced-motion`.
+
+### Restrained Color Palette
+
+| Token | Hex | Role | Usage |
+|:---|:---|:---|:---|
+| `--color-bone` | `#F4EFE5` | Parchment Base | 85–90% of screen surface area |
+| `--color-bone-light` | `#FAF7F0` | Elevated Surface | Card panels, modals, popovers |
+| `--color-ink` | `#20231E` | Deep Organic Ink | Primary text, high-contrast controls |
+| `--color-line` | `#DED2B8` | Subtle Divider | Nectar Line rail, subtle card borders |
+| `--color-beet` | `#6E3040` | Protein & Focus | Protein macro pills, primary CTAs, active highlights |
+| `--color-turmeric` | `#D49A32` | Carbs & Energy | Carbohydrate pills, partial states, guest tags |
+| `--color-herb` | `#52684F` | Fats & Completion | Fat macro pills, completed meal droplets, success |
+| `--color-honey` | `#B87532` | Calories & Streaks | Calorie centerpiece, streak badges, Nectar brand mark |
+
+---
+
+## 🧭 Application Shell & Canonical Routing
+
+```text
+                              BROWSER ENTRY (/)
+                                      │
+                    ┌─────────────────┴─────────────────┐
+                    ▼                                   ▼
+            [UNAUTHENTICATED]                    [AUTHENTICATED]
+                    │                                   │
+                    ▼                                   ▼
+         Public Experience (/)                Today Cockpit (/dashboard)
+         • PublicLayout                       • Pinned Left AppSidebar (248px/72px)
+         • Minimal editorial header           • Top Context Bar (Streak, Calories)
+         • Nectar Line visual journey         • 12-Column Responsive Layout
+         • Macro balance plate preview        • 8 Cols: Meal Timeline (Protagonist)
+         • 1-Click Guest Trial                • 4 Cols: Daily Balance & Snapshot
+         • /about, /login, /register          • /progress, /meals, /profile, /security
+```
+
+### Routing Invariants
+1. **Canonical `/` Invariant**:
+   - Visiting `/` when **unauthenticated** renders the public editorial landing page (`HomePage.tsx`).
+   - Visiting `/` when **authenticated** triggers a zero-flash client redirect straight into `/dashboard` (*"Today"*).
+2. **Product Vocabulary**:
+   - The primary route URL remains `/dashboard` for test and API compatibility, while user-facing UI labels and navigation strictly refer to it as **"Today"**.
+3. **Workspace Shell Components**:
+   - `AppSidebar`: Pinned on desktop (expanded 248px or collapsed 72px rail stored in `localStorage`) + slide-over drawer on mobile.
+   - `AppTopBar`: Sticky context bar with formatted date, streak droplet indicator, calorie target snapshot, and quick profile link.
+   - `MobileBottomNav`: Pinned bottom navigation for small viewports (*Today, Progress, Meals, Profile*).
+
+---
+
+## 🖥️ Workspace Surfaces
+
+### 1. Today Cockpit (`/dashboard`)
+The dietary command center organized in a 12-column responsive layout:
+- **8 Columns (Main Protagonist)**:
+  - `DashboardHero`: Time-aware greeting (*"Good morning, Alex"*), daily focus directive, and baseline summary capsule.
+  - `MealTimeline`: Chronologically sequenced meals (*08:00 AM Breakfast → 01:00 PM Lunch → 04:30 PM Snack → 07:45 PM Dinner*) connected by the physical Nectar Line.
+  - `MealCard`: Macro breakdown pills, portion sizing, 1-click adherence toggle (*"Mark eaten"* / *"Eaten"*), and culinary swap trigger.
+- **4 Columns (Instrumentation Panels)**:
+  - `DailyBalance`: Calorie centerpiece (consumed vs target, remaining kcal ticker), horizontal macro balance bars (Protein, Carbs, Fat), and plan generation trigger.
+  - `WeightSnapshot`: Latest weight, 7-day delta, mini SVG sparkline, and inline logging form.
+  - `GuestClaim`: Non-intrusive prompt for anonymous guest sessions to save credentials.
+
+### 2. Trajectory & Consistency (`/progress`)
+- `TrajectoryChart`: Interactive weight trend with `7D`, `30D`, and `90D` horizon filters and 7-day Simple Moving Average (SMA).
+- `AdherenceCalendar`: 28-day (4-week) cadence matrix with Nectar Droplets marking daily completion.
+- `NutritionConsistency`: Precision ratings for protein consistency, calorie targets, and fiber intake.
+- `Past Protocols Archive`: Historical expandable daily plans.
+
+### 3. Meals & Culinary Formulations (`/meals`)
+- Recipe exploration library with authentic culinary photography.
+- Filter pills: *All, High Protein, Balanced, Low Carb, Quick Prep*.
+- Ingredient specifications, preparation times, and instant swap recommendation actions.
+
+### 4. Your System (`/profile`)
+- Progressive baseline configuration:
+  - **Body & Biometrics**: Height, current weight, age, activity level, unit system (Metric vs Imperial).
+  - **Metabolic Direction**: Cutting (Deficit), Maintenance, Bulking (Surplus).
+  - **Dietary Boundaries**: Allergies, restrictions, and culinary flavor preferences.
+
+### 5. Security & Devices (`/security`)
+- Active multi-device sessions audit table with browser/OS parsing, IP address, and last active timestamp.
+- Remote session revocation and account credential protection.
+
+---
+
+## 🔐 Authentication Architecture (Hybrid Supabase & Native JWT)
+
+NECTAR implements a hybrid authentication model:
+
+1. **In-Memory Access Tokens**:
+   - Bearer access tokens reside **strictly in volatile Redux memory**. They are never saved to `localStorage` or `sessionStorage`, mitigating XSS exfiltration risks.
+2. **HttpOnly Secure Refresh Cookies**:
+   - Rotating refresh tokens are stored in `HttpOnly`, `Secure` cookies with `SameSite=Lax` (development) or `SameSite=None` (cross-site production).
+   - Replay & reuse detection: If an old or rotated token is used, all active sessions for that user are immediately revoked.
+3. **1-Click Supabase Guest Auth**:
+   - Anonymous trial via Supabase Anonymous Sign-In (`continueAsGuest`).
+   - Guest accounts have `email: null` in PostgreSQL, enabling immediate protocol generation without upfront registration.
+   - One-click account claiming via `/welcome` securely attaches an email and password to the existing guest user ID.
+4. **Multi-Device Session Tracking**:
+   - Every active session is tracked in the `Session` table in PostgreSQL with user agent parsing, IP address, and remote revocation capability.
 
 ---
 
@@ -71,16 +219,14 @@ Nectar/
 - **Node.js**: `v20.0.0` or higher
 - **npm**: `v10.0.0` or higher
 - **PostgreSQL**: Local PostgreSQL or containerized Docker instance (or Supabase Postgres)
-- **Google AI Studio API Key**: For Gemini generation ([Get Key](https://aistudio.google.com/))
-- **Docker & Docker Compose** *(Optional, recommended for testing & isolated local DB)*
+- **Google AI Studio API Key**: For Gemini diet generation ([Get Key](https://aistudio.google.com/))
+- **Supabase Project** *(Optional, recommended for 1-click guest sign-in)*: ([supabase.com](https://supabase.com/))
 
 ---
 
 ## 🚀 Local Setup & Getting Started
 
 ### 1. Clone and Install Dependencies
-
-Install all root, client, server, and shared package dependencies with a single command from the project root:
 
 ```bash
 git clone https://github.com/MAX5271/Nectar.git
@@ -92,7 +238,7 @@ npm install
 
 #### Server Environment (`server/.env`)
 
-Create `server/.env` with the following configuration:
+Create `server/.env` based on `server/.env.example`:
 
 ```env
 # Server Runtime
@@ -115,21 +261,28 @@ REFRESH_TOKEN_SECRET="super-secret-refresh-token-key-must-be-at-least-32-chars-l
 RATE_LIMIT_DISABLED=false
 SWAP_LIMIT_PER_HOUR=20
 REFRESH_LIMIT_PER_15M=60
+
+# Supabase Auth (Optional — enables "Continue as guest")
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_ANON_KEY="eyJhbGciOi..."
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOi..."
 ```
 
 #### Client Environment (`client/.env`)
 
-Create `client/.env` (optional; defaults to `http://localhost:5000/api`):
+Create `client/.env` based on `client/.env.example`:
 
 ```env
 VITE_API_URL=http://localhost:5000/api
+
+# Supabase Auth (Optional — enables 1-click guest button)
+VITE_SUPABASE_URL="https://your-project.supabase.co"
+VITE_SUPABASE_ANON_KEY="eyJhbGciOi..."
 ```
 
 ### 3. Database Setup
 
-#### Option A: Using Local Docker PostgreSQL (Recommended for Tests & Dev)
-
-Start the local benchmark & test database:
+#### Option A: Using Local Docker PostgreSQL
 
 ```bash
 docker run -d --name nectar-postgres \
@@ -138,10 +291,6 @@ docker run -d --name nectar-postgres \
   -e POSTGRES_DB=nectar \
   -p 5432:5432 postgres:17
 ```
-
-#### Option B: Remote / Supabase Database
-
-Paste your connection string into `DATABASE_URL` in `server/.env`.
 
 #### Apply Migrations & Generate Prisma Client
 
@@ -155,13 +304,13 @@ npm --workspace=server run prisma:generate
 
 ### 4. Launch the Development Environment
 
-You can start server and client independently:
+Start server and client concurrently or in separate terminals:
 
 ```bash
-# Terminal 1: Start Backend API (runs on http://localhost:5000)
+# Terminal 1: Backend API (runs on http://localhost:5000)
 npm --workspace=server run dev
 
-# Terminal 2: Start Client UI (runs on http://localhost:5173)
+# Terminal 2: Client UI (runs on http://localhost:5173)
 npm --workspace=Nectar run dev
 ```
 
@@ -173,7 +322,7 @@ All requests and responses use JSON. Cross-site requests require `credentials: i
 
 ### Response Envelope Format
 
-All standard API endpoints return a unified response schema (`ApiResponse<T>`):
+Standard API responses return a unified response envelope (`ApiResponse<T>`):
 
 ```json
 {
@@ -197,7 +346,7 @@ Error responses return:
 ### 1. System & Health
 
 #### `GET /health`
-Liveness probe and database connection verification. Mounted before rate limiters and auth guards.
+Liveness probe and database connection verification.
 
 - **Authentication**: None (Public)
 - **Response `200 OK`**:
@@ -205,7 +354,7 @@ Liveness probe and database connection verification. Mounted before rate limiter
   {
     "status": "healthy",
     "uptimeSeconds": 142.8,
-    "timestamp": "2026-09-21T16:30:00.000Z"
+    "timestamp": "2026-09-23T16:30:00.000Z"
   }
   ```
 
@@ -214,7 +363,7 @@ Liveness probe and database connection verification. Mounted before rate limiter
 ### 2. Authentication & Sessions
 
 #### `POST /api/user/signup`
-Creates a new operative account, initializes dietary constraints, and issues tokens.
+Creates a new account, initializes dietary constraints, and issues tokens.
 
 - **Authentication**: None (Public)
 - **Rate Limit**: 30 requests / 15 min (`authLimiter`)
@@ -234,231 +383,99 @@ Creates a new operative account, initializes dietary constraints, and issues tok
     "preferences": "High protein, no peanuts"
   }
   ```
-- **Validation**:
-  - `age`: $\ge 13$ (COPPA compliance)
-  - `activityLevel`: `SEDENTARY`, `LIGHT`, `MODERATE`, `VERY_ACTIVE`, `EXTRA_ACTIVE`
-  - `planType`: `CUTTING`, `BULKING`, `RECOMP`
-  - `gender`: `MALE`, `FEMALE`
-  - `unitSystem`: `METRIC`, `IMPERIAL`
 - **Response `201 Created`**:
   - **Set-Cookie**: `jwt=<refreshToken>; HttpOnly; Secure; SameSite=Lax/None; Max-Age=7d`
-  - **Body**:
-    ```json
-    {
-      "success": true,
-      "message": "User created successfully",
-      "data": {
-        "id": "uuid",
-        "username": "Neo",
-        "email": "operative@nectar.health",
-        "accessToken": "eyJhbGciOi..."
-      }
-    }
-    ```
+  - **Body**: `{ "success": true, "data": { "id": "...", "username": "Neo", "email": "...", "accessToken": "..." } }`
 
 #### `POST /api/auth/login`
 Authenticates user credentials, registers a session record, and sets the `HttpOnly` refresh cookie.
 
 - **Authentication**: None (Public)
-- **Rate Limit**: 30 requests / 15 min (`authLimiter`)
+- **Response `200 OK`**: Sets cookie and returns access token + user details.
+
+#### `POST /api/auth/supabase-session`
+Exchanges a Supabase session (anonymous, email/password, or OAuth) for an app session.
+
+- **Authentication**: None (Public)
 - **Request Body**:
   ```json
   {
-    "email": "operative@nectar.health",
-    "password": "Password123!"
+    "supabaseAccessToken": "eyJhbGciOi...",
+    "profile": { ...optional biometrics... }
   }
   ```
-- **Response `200 OK`**:
-  - **Set-Cookie**: `jwt=<refreshToken>; HttpOnly; Secure; Max-Age=7d`
-  - **Body**:
-    ```json
-    {
-      "success": true,
-      "message": "User logged in successfully",
-      "data": {
-        "id": "uuid",
-        "username": "Neo",
-        "email": "operative@nectar.health",
-        "accessToken": "eyJhbGciOi..."
-      }
-    }
-    ```
+- **Response `200 OK`**: Returns access token and establishes an active Nectar session.
 
 #### `POST /api/auth/refresh`
 Rotates the session refresh token and issues a fresh short-lived Bearer access token.
 
 - **Authentication**: HttpOnly Cookie (`jwt=<refreshToken>`)
-- **Rate Limit**: 60 requests / 15 min (`refreshLimiter`)
 - **Headers**: `X-Requested-With: XMLHttpRequest` (anti-CSRF header)
-- **Behavior**:
-  - Automatically invalidates the presented refresh token and replaces it with a new cryptographic hash in the database.
-  - **Replay & Reuse Detection**: If an old or rotated token is presented, the server revokes **ALL** active sessions for that user to mitigate stolen token attacks.
-- **Response `200 OK`**:
-  - **Set-Cookie**: `jwt=<newRotatedRefreshToken>; HttpOnly; Secure`
-  - **Body**:
-    ```json
-    {
-      "success": true,
-      "username": "Neo",
-      "accessToken": "eyJhbGciOi..."
-    }
-    ```
-- **Note**: `GET /api/auth/refresh` remains supported for backward compatibility.
+- **Response `200 OK`**: Sets new rotated cookie and returns `{ "success": true, "accessToken": "..." }`.
 
 #### `POST /api/auth/logout`
 Terminates the user's active session in the database and clears the refresh cookie.
 
 - **Authentication**: HttpOnly Cookie (`jwt`)
-- **Response `200 OK`**:
-  - **Set-Cookie**: `jwt=; Max-Age=0`
-  - **Body**:
-    ```json
-    {
-      "success": true,
-      "message": "User successfully logged out"
-    }
-    ```
+- **Response `200 OK`**: Sets `jwt=; Max-Age=0`.
 
 #### `GET /api/auth/sessions`
 Retrieves all active devices/sessions associated with the user.
 
 - **Authentication**: `Bearer <accessToken>`
-- **Response `200 OK`**:
-  ```json
-  {
-    "success": true,
-    "data": [
-      {
-        "id": "session-uuid",
-        "userAgent": "Mozilla/5.0...",
-        "ipAddress": "127.0.0.1",
-        "createdAt": "2026-09-21T10:00:00.000Z",
-        "expiresAt": "2026-09-28T10:00:00.000Z"
-      }
-    ]
-  }
-  ```
+- **Response `200 OK`**: Array of active sessions with `userAgent`, `ipAddress`, `isCurrent`, and timestamps.
 
 #### `DELETE /api/auth/sessions/:id`
 Remotely revokes a specific device session.
 
 - **Authentication**: `Bearer <accessToken>`
-- **Response `200 OK`**:
-  ```json
-  {
-    "success": true,
-    "message": "Session successfully revoked"
-  }
-  ```
+- **Response `200 OK`**: `{ "success": true, "message": "Session successfully revoked" }`
 
 ---
 
 ### 3. User & Biometric Profile
 
 #### `GET /api/user/profile`
-Fetches the operative's profile along with active dietary constraints.
+Fetches user profile along with active dietary constraints.
 
 - **Authentication**: `Bearer <accessToken>`
-- **Response `200 OK`**:
-  ```json
-  {
-    "success": true,
-    "data": {
-      "id": "user-uuid",
-      "username": "Neo",
-      "email": "operative@nectar.health",
-      "constraint": {
-        "id": "constraint-uuid",
-        "planType": "CUTTING",
-        "gender": "MALE",
-        "unitSystem": "METRIC",
-        "activityLevel": "MODERATE",
-        "height": 180,
-        "weight": 80,
-        "age": 28,
-        "preferences": "High protein, no peanuts"
-      }
-    }
-  }
-  ```
+- **Response `200 OK`**: Returns user profile with populated biometrics.
 
 #### `PATCH /api/user/profile`
 Updates biometrics, activity scaling, or dietary restrictions. Automatically re-evaluates clinical guardrails.
 
 - **Authentication**: `Bearer <accessToken>`
-- **Request Body** (all fields optional):
-  ```json
-  {
-    "weight": 78.5,
-    "height": 180,
-    "age": 29,
-    "activityLevel": "VERY_ACTIVE",
-    "planType": "RECOMP",
-    "preferences": "Vegetarian, high iron"
-  }
-  ```
-- **Response `200 OK`**:
-  ```json
-  {
-    "success": true,
-    "message": "Profile updated successfully",
-    "data": { ...updatedUserRecord... }
-  }
-  ```
+- **Request Body** (optional fields): `weight`, `height`, `age`, `activityLevel`, `planType`, `preferences`.
+- **Response `200 OK`**: Returns updated user record.
 
 ---
 
 ### 4. Diet Protocol & Meal Swapping
 
 #### `POST /api/diet/plan`
-Generates a complete 5-meal personalized daily nutrition protocol using Gemini AI.
+Generates a complete personalized daily nutrition protocol using Gemini AI.
 
 - **Authentication**: `Bearer <accessToken>`
 - **Rate Limit**: 10 requests / 1 hour (`generateLimiter`)
 - **Idempotency**: Strict daily lock (`@@unique([userId, date])`). Only 1 plan can be generated per calendar day (UTC midnight boundary).
 - **Clinical Math**: Computes Mifflin-St Jeor BMR, applies Activity Multiplier (1.2–1.9), applies Goal Adjustment (-500 for CUTTING, +300 for BULKING), clamps to minimum 1200 kcal floor (1600 for teens), verifies against 9-category allergen taxonomy.
-- **Response `201 Created`**:
-  ```json
-  {
-    "success": true,
-    "data": {
-      "id": "plan-uuid",
-      "date": "2026-09-21T00:00:00.000Z",
-      "totalCalories": 2150,
-      "totalProtein": 160,
-      "totalCarbs": 215,
-      "totalFat": 72,
-      "diets": [
-        {
-          "id": "meal-uuid-1",
-          "mealType": "BREAKFAST",
-          "meal": "Steel-Cut Oats with Berries & Whey",
-          "portion": "1 bowl (250g)",
-          "calories": 450,
-          "protein": 35,
-          "carb": 55,
-          "fat": 10
-        },
-        ...
-      ]
-    }
-  }
-  ```
+- **Response `201 Created`**: Returns generated `DietPlan` with embedded meals and macro totals.
 
 #### `GET /api/diet/latest`
 Returns the user's most recent daily protocol.
 
 - **Authentication**: `Bearer <accessToken>`
-- **Response `200 OK`**: Returns latest `DietPlan` object with embedded meals.
+- **Response `200 OK`**: Returns latest `DietPlan` object.
 
 #### `GET /api/diet/history`
 Returns historical diet protocols ordered by date descending.
 
 - **Authentication**: `Bearer <accessToken>`
-- **Response `200 OK`**: Returns array of `DietPlan` objects.
+- **Query Params**: `days` (integer, default `30`)
+- **Response `200 OK`**: Array of historical `DietPlan` records.
 
 #### `GET /api/diet/:id`
-Retrieves a specific diet plan by UUID. Enforces owner authorization (prevents IDOR).
+Retrieves a specific diet plan by UUID with owner authorization (prevents IDOR).
 
 - **Authentication**: `Bearer <accessToken>`
 - **Response `200 OK`**: Returns matching `DietPlan` object.
@@ -467,90 +484,33 @@ Retrieves a specific diet plan by UUID. Enforces owner authorization (prevents I
 Returns a transparent breakdown of the exact metabolic formulas used to calculate the user's protocol.
 
 - **Authentication**: `Bearer <accessToken>`
-- **Response `200 OK`**:
-  ```json
-  {
-    "success": true,
-    "data": {
-      "bmr": 1780,
-      "activityLevel": "MODERATE",
-      "activityMultiplier": 1.55,
-      "tdee": 2759,
-      "goal": "CUTTING",
-      "goalAdjustment": -500,
-      "targetCalories": 2259,
-      "macros": {
-        "protein": { "grams": 170, "calories": 678, "percentage": 30 },
-        "carbs": { "grams": 226, "calories": 904, "percentage": 40 },
-        "fat": { "grams": 75, "calories": 678, "percentage": 30 }
-      },
-      "formula": "Mifflin-St Jeor"
-    }
-  }
-  ```
+- **Response `200 OK`**: Returns BMR, TDEE, goal adjustment, macro split percentages, and formula metadata.
 
 #### `POST /api/diet/swap`
 Swaps an individual meal suggestion without discarding or re-generating the entire day's plan.
 
 - **Authentication**: `Bearer <accessToken>`
 - **Rate Limit**: 20 requests / 1 hour (`swapLimiter`)
-- **Request Body**:
-  ```json
-  {
-    "dietId": "meal-uuid-1",
-    "reason": "Missing ingredients / prefer a vegetarian alternative"
-  }
-  ```
-- **Behavior**:
-  - Prompts Gemini to generate a single culinary replacement targeted to the exact calories of the swapped meal ($\pm 10\%$).
-  - Evaluates deterministic allergy scanner against the replacement.
-  - Updates the meal record in-place.
-  - Automatically recalculates parent `DietPlan` totals (`totalCalories`, `totalProtein`, `totalCarbs`, `totalFat`).
-- **Response `200 OK`**:
-  ```json
-  {
-    "success": true,
-    "message": "Meal successfully swapped",
-    "data": { ...updatedDietPlan... }
-  }
-  ```
+- **Request Body**: `{ "dietId": "uuid", "reason": "Prefer a vegetarian alternative" }`
+- **Behavior**: Prompts Gemini to generate a single culinary replacement targeted to the exact calories of the swapped meal ($\pm 10\%$), runs allergen scan, updates meal in-place, and recalculates parent plan macro totals.
+- **Response `200 OK`**: Returns updated meal and parent `DietPlan`.
 
 ---
 
 ### 5. Tracking & Analytics
 
 #### `POST /api/tracking/weight`
-Logs a bodyweight weigh-in and automatically syncs the user's active constraint profile.
+Logs a bodyweight entry and automatically syncs the user's active constraint profile.
 
 - **Authentication**: `Bearer <accessToken>`
-- **Request Body**:
-  ```json
-  {
-    "weight": 78.2,
-    "date": "2026-09-21T07:30:00.000Z",
-    "note": "Morning weigh-in, fasted"
-  }
-  ```
-- **Response `201 Created`**:
-  ```json
-  {
-    "success": true,
-    "message": "Weight logged successfully",
-    "data": {
-      "id": "weight-entry-uuid",
-      "weight": 78.2,
-      "date": "2026-09-21T07:30:00.000Z",
-      "note": "Morning weigh-in, fasted",
-      "userId": "user-uuid"
-    }
-  }
-  ```
+- **Request Body**: `{ "weight": 78.2, "date": "...", "note": "Morning fasted" }`
+- **Response `201 Created`**: Returns created `WeightEntry`.
 
 #### `GET /api/tracking/weight/trend`
-Computes 7-day Simple Moving Average (SMA) and rate of weekly weight change to filter out water weight noise.
+Computes 7-day Simple Moving Average (SMA) and rate of weekly weight change.
 
 - **Authentication**: `Bearer <accessToken>`
-- **Query Params**: `days` (integer, default `60`)
+- **Query Params**: `days` (default `60` or `90`)
 - **Response `200 OK`**:
   ```json
   {
@@ -560,61 +520,24 @@ Computes 7-day Simple Moving Average (SMA) and rate of weekly weight change to f
       "latestMovingAverage": 78.6,
       "weeklyChangeKg": -0.4,
       "direction": "LOSING",
-      "history": [
-        {
-          "id": "entry-1",
-          "date": "2026-09-15T00:00:00.000Z",
-          "weight": 79.1,
-          "movingAverage7Day": 79.2,
-          "note": null
-        },
-        ...
-      ]
+      "history": [ ... ]
     }
   }
   ```
-  `direction` is one of: `LOSING` ($< -0.2$ kg/wk), `GAINING` ($> +0.2$ kg/wk), `MAINTAINING`, or `INSUFFICIENT_DATA`.
 
 #### `POST /api/tracking/meals`
-Logs meal adherence (whether the user ate the prescribed meal or an off-plan alternative).
+Logs meal adherence (eaten as prescribed vs off-plan).
 
 - **Authentication**: `Bearer <accessToken>`
-- **Request Body**:
-  ```json
-  {
-    "name": "Steel-Cut Oats with Berries & Whey",
-    "mealType": "BREAKFAST",
-    "calories": 450,
-    "protein": 35,
-    "carbs": 55,
-    "fat": 10,
-    "adhered": true,
-    "dietPlanId": "plan-uuid"
-  }
-  ```
+- **Request Body**: `{ "name": "...", "mealType": "BREAKFAST", "calories": 450, "protein": 35, "carbs": 55, "fat": 10, "adhered": true, "dietPlanId": "..." }`
 - **Response `201 Created`**: Returns logged `MealLog` entry.
 
 #### `GET /api/tracking/meals`
 Returns logged meals and aggregated macronutrient adherence totals for a specified date.
 
 - **Authentication**: `Bearer <accessToken>`
-- **Query Params**: `date` (ISO date string `YYYY-MM-DD`, defaults to today UTC)
-- **Response `200 OK`**:
-  ```json
-  {
-    "success": true,
-    "data": {
-      "date": "2026-09-21",
-      "totalCalories": 1850,
-      "totalProtein": 140,
-      "totalCarbs": 190,
-      "totalFat": 62,
-      "mealsLogged": 4,
-      "adherenceRate": 100,
-      "logs": [ ... ]
-    }
-  }
-  ```
+- **Query Params**: `date` (`YYYY-MM-DD`, defaults to today UTC)
+- **Response `200 OK`**: Aggregated calories, macros, adherence percentage, and raw logs.
 
 ---
 
@@ -656,17 +579,17 @@ Returns logged meals and aggregated macronutrient adherence totals for a specifi
 All verification commands can be run from the repository root:
 
 ```bash
-# Run complete test suite (56 tests across 12 suites in ~1.2s)
-npm test
+# Run client unit and component tests (30 tests across 6 suites)
+npm --workspace=Nectar test
 
-# Run TypeScript typechecks across all workspaces
-npm run typecheck
+# Run server unit tests (32 tests across 6 suites)
+npm --workspace=server run test tests/unit/
+
+# Run complete TypeScript build and bundle checks (client + server)
+npm run build
 
 # Run ESLint across client and server
 npm run lint
-
-# Build all packages (@nectar/types, server, client)
-npm run build
 ```
 
 ---
@@ -680,8 +603,6 @@ Baseline performance measurements on `GET /api/diet/latest` (Scenario S4, 320 RP
 - **p95 Latency**: `1.9 ms`
 - **p99 Latency**: `3.8 ms`
 - **HTTP Error Rate**: `0.00%`
-
-To learn more, inspect [`docs/PERFORMANCE.md`](./docs/PERFORMANCE.md) and [`docs/DEVELOPMENT_PLAN.md`](./docs/DEVELOPMENT_PLAN.md).
 
 ---
 

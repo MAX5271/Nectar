@@ -16,7 +16,10 @@ export interface UserConstraint {
 export interface AuthUser {
   id: string;
   username: string;
-  email: string;
+  name?: string;
+  isAnonymous?: boolean;
+  // Guest accounts (via "Continue as guest") have no email until they claim one.
+  email: string | null;
   constraint?: UserConstraint;
   constraints?: UserConstraint[];
 }

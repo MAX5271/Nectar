@@ -1,95 +1,74 @@
 import React from 'react';
+import { Scale, Sparkles, PieChart, TrendingUp } from 'lucide-react';
 import { useSmartNavigate } from '../../hooks/useSmartNavigate';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+
+const MODULES = [
+  {
+    icon: Scale,
+    title: 'Your baseline',
+    body: "Nectar starts with your body — current weight, height, age, and activity level — to work out your metabolic baseline.",
+  },
+  {
+    icon: Sparkles,
+    title: 'A plan built for you',
+    body: "Every day's meals are generated fresh, tailored to your calorie target and what you actually like to eat. No static templates.",
+  },
+  {
+    icon: PieChart,
+    title: 'Macros, worked out',
+    body: 'Full visibility into your protein, carbs, and fat — broken down precisely so you know exactly what a meal is doing for you.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Progress over time',
+    body: 'Log your weigh-ins and meals as you go, and watch your trend — not just today\'s number — take shape.',
+  },
+];
 
 const About: React.FC = () => {
-
   const navigate = useSmartNavigate();
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center bg-zinc-950 p-6 font-sans text-white md:p-12">
+    <div className="flex min-h-screen w-full flex-col items-center bg-linen p-6 md:p-12">
       <div className="w-full max-w-5xl">
-        
-        <div className="mb-12 border-b-4 border-red-600 pb-6">
-          <h1 className="text-4xl font-black uppercase tracking-widest text-white md:text-6xl">
-            System.Nectar <span className="text-red-600">//</span> Directive
-          </h1>
-          <p className="mt-4 text-sm font-bold uppercase tracking-widest text-zinc-500">
-            Eliminating biological guesswork through high-performance engineering and AI synthesis.
+        <div className="mb-12 border-b border-line pb-6">
+          <h1 className="font-display text-4xl font-semibold text-ink md:text-5xl">About Nectar</h1>
+          <p className="mt-4 max-w-xl text-base text-ink-soft">
+            A diet plan that starts with your body and your goal, not a generic calorie count.
           </p>
         </div>
 
-        <div className="mb-16 border-4 border-zinc-800 bg-black p-8 shadow-[8px_8px_0px_0px_rgba(255,255,255,1)] transition-shadow hover:shadow-[12px_12px_0px_0px_rgba(255,255,255,1)] md:p-12">
-          <p className="text-lg font-bold uppercase leading-relaxed tracking-wider text-zinc-400 md:text-2xl md:leading-loose">
-            Nectar is not a generic calorie counter. It is a precision-engineered tool built for those who treat their physical optimization as a <span className="text-white">data-driven protocol</span>. By feeding the system your exact biometric parameters, Nectar computes the optimal path to your target physique—whether you are maintaining baseline or executing a strict cut/bulk to hit that <span className="text-red-600">70kg milestone</span>.
+        <Card variant="quiet" padding="lg" className="mb-16 md:p-12">
+          <p className="text-lg leading-relaxed text-ink md:text-xl md:leading-loose">
+            Nectar isn't a spreadsheet with extra steps. Give it your biometrics and your goal — cutting, bulking,
+            or holding steady — and it works out exactly what to eat, one full day at a time, and adjusts as your
+            weight and preferences change.
           </p>
-        </div>
+        </Card>
 
         <div className="mb-16">
-          <h2 className="mb-8 text-2xl font-black uppercase tracking-widest text-white">
-            Active Modules
-          </h2>
+          <h2 className="mb-8 font-display text-2xl font-semibold text-ink">How it works</h2>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            
-            <div className="group border-2 border-zinc-800 bg-black p-6 transition-colors hover:border-red-600">
-              <div className="mb-4 inline-block bg-red-600 px-3 py-1 text-xs font-black uppercase tracking-widest text-black">
-                [ SYS-01 ]
-              </div>
-              <h3 className="mb-2 text-xl font-black uppercase tracking-widest text-white transition-colors group-hover:text-red-600">
-                Biometric Calibration
-              </h3>
-              <p className="text-sm font-bold uppercase leading-relaxed tracking-wider text-zinc-500">
-                The system ingests your baseline metrics—current mass, target mass, activity threshold, and dietary constraints—to establish your baseline metabolic algorithms.
-              </p>
-            </div>
-
-            <div className="group border-2 border-zinc-800 bg-black p-6 transition-colors hover:border-red-600">
-              <div className="mb-4 inline-block bg-red-600 px-3 py-1 text-xs font-black uppercase tracking-widest text-black">
-                [ AI-GEN ]
-              </div>
-              <h3 className="mb-2 text-xl font-black uppercase tracking-widest text-white transition-colors group-hover:text-red-600">
-                AI Diet Synthesis
-              </h3>
-              <p className="text-sm font-bold uppercase leading-relaxed tracking-wider text-zinc-500">
-                Powered by an advanced Gemini AI integration, Nectar dynamically generates your meal protocols. No static templates. Every diet plan is a custom output calculated against your daily caloric deficit targets.
-              </p>
-            </div>
-
-            <div className="group border-2 border-zinc-800 bg-black p-6 transition-colors hover:border-red-600">
-              <div className="mb-4 inline-block bg-red-600 px-3 py-1 text-xs font-black uppercase tracking-widest text-black">
-                [ MACRO ]
-              </div>
-              <h3 className="mb-2 text-xl font-black uppercase tracking-widest text-white transition-colors group-hover:text-red-600">
-                Granular Macro Analysis
-              </h3>
-              <p className="text-sm font-bold uppercase leading-relaxed tracking-wider text-zinc-500">
-                Total visibility into your fuel intake. The system provides an exact, mathematically precise breakdown of your protein, carbohydrate, and lipid distribution to ensure peak performance and muscle retention.
-              </p>
-            </div>
-
-            <div className="group border-2 border-zinc-800 bg-black p-6 transition-colors hover:border-red-600">
-              <div className="mb-4 inline-block bg-red-600 px-3 py-1 text-xs font-black uppercase tracking-widest text-black">
-                [ DATA ]
-              </div>
-              <h3 className="mb-2 text-xl font-black uppercase tracking-widest text-white transition-colors group-hover:text-red-600">
-                Persistent State Tracking
-              </h3>
-              <p className="text-sm font-bold uppercase leading-relaxed tracking-wider text-zinc-500">
-                Your progress is continuously logged to a secure database. Track your daily weigh-ins, monitor your adherence, and visualize your trajectory over time with uncompromised type-safety.
-              </p>
-            </div>
-
+            {MODULES.map(({ icon: Icon, title, body }) => (
+              <Card key={title} variant="quiet" padding="lg" className="transition-colors hover:border-beet/40">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-linen text-beet">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="mb-2 font-display text-lg font-semibold text-ink">{title}</h3>
+                <p className="text-sm leading-relaxed text-ink-soft">{body}</p>
+              </Card>
+            ))}
           </div>
         </div>
 
-        <div className="border-4 border-red-600 bg-red-600 p-8 text-center md:p-12">
-          <h2 className="mb-6 text-2xl font-black uppercase tracking-widest text-black md:text-4xl">
-            [ END OF READOUT ] - Ready to Initialize?
-          </h2>
-          <button onClick={()=>navigate('/dashboard')} className="transform bg-black px-10 py-5 text-sm font-black uppercase tracking-widest text-white shadow-[8px_8px_0px_0px_rgba(255,255,255,0.2)] transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_rgba(255,255,255,0.4)] active:translate-y-0 active:shadow-none">
-            Access Dashboard
-          </button>
-        </div>
-
+        <Card variant="accent" padding="lg" className="text-center md:p-12">
+          <h2 className="mb-6 font-display text-2xl font-semibold text-ink md:text-3xl">Ready to see your plan?</h2>
+          <Button variant="primary" size="lg" onClick={() => navigate('/dashboard')}>
+            Go to your dashboard
+          </Button>
+        </Card>
       </div>
     </div>
   );

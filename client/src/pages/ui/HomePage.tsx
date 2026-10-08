@@ -1,86 +1,215 @@
-import React from 'react';
-import { useSmartNavigate } from '../../hooks/useSmartNavigate';
+import React, { useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
+import { useAppSelector, useAppDispatch } from '../../hooks/reduxHooks';
+import { continueAsGuest } from '../../services/authFlow';
+import { NectarDroplet } from '../../components/nectar/NectarDroplet';
+import { NectarButton } from '../../components/ui/NectarButton';
+import { notify } from '../../lib/toast';
+import { ArrowRight, Check, UtensilsCrossed, Scale, Sparkles } from 'lucide-react';
 
-const Home: React.FC = () => {
+const RADIUS = 70;
+const CENTER = 90;
+const MACROS = [
+  { label: 'Protein', share: 0.3, color: '#6e3040' },
+  { label: 'Carbs', share: 0.45, color: '#d49a32' },
+  { label: 'Fat', share: 0.25, color: '#52684f' },
+] as const;
 
-  const navigate = useSmartNavigate();
+const MACROS_WITH_OFFSET = MACROS.reduce<Array<(typeof MACROS)[number] & { offset: number }>>(
+  (acc, macro) => {
+    const offset = acc.length ? acc[acc.length - 1].offset + acc[acc.length - 1].share : 0;
+    acc.push({ ...macro, offset });
+    return acc;
+  },
+  [],
+);
+
+const PlateChart: React.FC = () => {
+  const shouldReduceMotion = useReducedMotion();
 
   return (
-    <main className="min-h-screen bg-white">
-      <section className="relative overflow-hidden px-6 pt-16 pb-24 text-center lg:px-8 lg:pt-32">
-        <div className="mx-auto max-w-2xl">
-          <div className="mb-8 flex justify-center">
-            <div className="cursor-pointer rounded-full bg-amber-50 px-3 py-1 text-sm leading-6 text-amber-600 ring-1 ring-amber-600/10 transition-colors hover:ring-amber-600/20">
-              New: Personalized AI Meal Generation is live.
-            </div>
-          </div>
-          <h1 className="text-5xl font-black tracking-tight text-zinc-900 sm:text-7xl">
-            Fuel your body. <span className="text-amber-500">Hit your targets.</span>
-          </h1>
-          <p className="mt-6 text-lg leading-8 text-zinc-600">
-            Nectar takes the guesswork out of your diet. Track your macros, manage your caloric deficit, and reach your goal weight with smart, adaptable meal plans.
-          </p>
-          <div className="mt-10 flex items-center justify-center gap-x-6">
-            <button onClick={()=>navigate('/login')} className="rounded-full bg-zinc-900 px-8 py-4 text-base font-bold text-white shadow-xl transition-all hover:bg-zinc-800 active:scale-95">
-              Start Your Journey
-            </button>
-            <button onClick={()=>navigate('/about')} className="text-base font-semibold leading-6 text-zinc-900 transition-colors hover:text-amber-600">
-              See How It Works <span aria-hidden="true">→</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-zinc-50 py-24 sm:py-32">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl lg:text-center">
-            <h2 className="text-base font-semibold uppercase tracking-widest text-amber-600">
-              Achieve Your Best Physique
-            </h2>
-            <p className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-              Everything you need to optimize your nutrition
-            </p>
-          </div>
-          
-          <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
-            <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
-              
-              <div className="flex flex-col items-start rounded-3xl bg-white p-8 shadow-sm ring-1 ring-zinc-200 transition-shadow hover:shadow-md">
-                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-2xl">
-                  🥑
-                </div>
-                <dt className="text-xl font-bold leading-7 text-zinc-900">Effortless Macro Tracking</dt>
-                <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-zinc-600">
-                  <p className="flex-auto">Stop stressing over spreadsheets. Log your meals in seconds and let Nectar calculate your exact protein, carb, and fat intake.</p>
-                </dd>
-              </div>
-
-              <div className="flex flex-col items-start rounded-3xl bg-white p-8 shadow-sm ring-1 ring-zinc-200 transition-shadow hover:shadow-md">
-                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-2xl">
-                  🧠
-                </div>
-                <dt className="text-xl font-bold leading-7 text-zinc-900">AI-Powered Dietitian</dt>
-                <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-zinc-600">
-                  <p className="flex-auto">Get dynamic meal suggestions tailored perfectly to your current weight, preferences, and daily caloric goals.</p>
-                </dd>
-              </div>
-
-              <div className="flex flex-col items-start rounded-3xl bg-white p-8 shadow-sm ring-1 ring-zinc-200 transition-shadow hover:shadow-md">
-                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-2xl">
-                  📉
-                </div>
-                <dt className="text-xl font-bold leading-7 text-zinc-900">Visual Progress</dt>
-                <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-zinc-600">
-                  <p className="flex-auto">Watch the numbers drop. Track your daily weigh-ins and visualize your journey to your target physique with clean, easy-to-read charts.</p>
-                </dd>
-              </div>
-
-            </dl>
-          </div>
-        </div>
-      </section>
-    </main>
+    <div className="flex items-center gap-8 p-6 rounded-3xl bg-bone-light/80 border border-line shadow-warm-sm">
+      <svg viewBox="0 0 180 180" className="h-40 w-40 sm:h-48 sm:w-48 shrink-0">
+        <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="#ded2b8" strokeWidth="18" />
+        <g transform={`rotate(-90 ${CENTER} ${CENTER})`}>
+          {MACROS_WITH_OFFSET.map((macro, index) => (
+            <motion.circle
+              key={macro.label}
+              cx={CENTER}
+              cy={CENTER}
+              r={RADIUS}
+              fill="none"
+              stroke={macro.color}
+              strokeWidth="18"
+              style={{ pathOffset: macro.offset }}
+              initial={shouldReduceMotion ? false : { pathLength: 0 }}
+              animate={{ pathLength: macro.share }}
+              transition={{
+                duration: 0.9,
+                delay: shouldReduceMotion ? 0 : 0.3 + index * 0.15,
+                ease: [0.2, 0.8, 0.2, 1],
+              }}
+            />
+          ))}
+        </g>
+      </svg>
+      <ul className="flex flex-col gap-3 font-mono text-xs">
+        {MACROS.map((macro) => (
+          <li key={macro.label} className="flex items-center gap-2.5">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: macro.color }}
+              aria-hidden="true"
+            />
+            <span className="text-ink font-medium">{macro.label}</span>
+            <span className="text-ink-muted">{Math.round(macro.share * 100)}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 };
 
-export default Home;
+export const HomePage: React.FC = () => {
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, isInitialized } = useAppSelector((state) => state.auth);
+  const [isGuestLoading, setIsGuestLoading] = useState(false);
+
+  // Canonical '/' redirect: If authenticated, immediately route to Today cockpit
+  if (isInitialized && isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const handleGuestTrial = async () => {
+    setIsGuestLoading(true);
+    try {
+      await continueAsGuest(dispatch);
+      notify.success('Welcome! Guest session initiated.');
+      navigate('/dashboard');
+    } catch {
+      notify.error("Couldn't start guest session. Please register with email.");
+      navigate('/register');
+    } finally {
+      setIsGuestLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-linen text-ink">
+      {/* Editorial Hero Section */}
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          {/* Left 7 Columns */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-honey-subtle border border-honey/30 text-xs font-mono font-medium text-honey-dark">
+              <NectarDroplet state="filled" color="honey" size="xs" />
+              <span>Identity-First Personal Nutrition</span>
+            </div>
+
+            <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-ink leading-[1.05]">
+              The food plan is the protagonist.{' '}
+              <span className="font-serif italic text-beet">Everything else is instrumentation.</span>
+            </h1>
+
+            <p className="text-base sm:text-lg font-sans text-ink-muted max-w-xl leading-relaxed">
+              No endless spreadsheet entries or clinical calculators. Nectar turns your metabolic baseline into an editorial chronological journey of chef-crafted meals.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <NectarButton
+                variant="primary"
+                size="lg"
+                onClick={() => navigate('/register')}
+                rightIcon={<ArrowRight className="h-4 w-4" />}
+              >
+                Synthesize Your Plan
+              </NectarButton>
+
+              <NectarButton
+                variant="secondary"
+                size="lg"
+                loading={isGuestLoading}
+                onClick={handleGuestTrial}
+              >
+                Try as Guest (1-Click)
+              </NectarButton>
+            </div>
+
+            <div className="flex items-center gap-6 pt-4 text-xs font-mono text-ink-muted">
+              <span className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-herb" /> Free anonymous trial
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-herb" /> No calorie math required
+              </span>
+            </div>
+          </div>
+
+          {/* Right 5 Columns: The Macro Plate Balance */}
+          <div className="lg:col-span-5 flex flex-col items-center justify-center">
+            <PlateChart />
+            <span className="mt-3 text-xs font-mono text-ink-muted">
+              Energy Split: 30% Protein • 45% Slow Carbs • 25% Whole Fats
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* The Nectar Journey: 3 Principles */}
+      <section className="border-t border-line bg-bone-light/70 py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mb-16">
+            <span className="text-xs font-mono uppercase tracking-wider text-ink-muted">
+              Core Principles
+            </span>
+            <h2 className="mt-1 font-display text-3xl sm:text-4xl font-normal tracking-tight text-ink">
+              Built for people who want to eat well, without obsessing over numbers.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="p-8 rounded-3xl border border-line bg-bone shadow-warm-sm space-y-4">
+              <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-bone-light border border-line text-beet shadow-warm-sm">
+                <UtensilsCrossed className="h-5 w-5" />
+              </div>
+              <h3 className="font-display text-xl font-normal text-ink">
+                Chronological Daily Protocol
+              </h3>
+              <p className="text-sm font-sans text-ink-muted leading-relaxed">
+                Your meals are sequenced along the Nectar Line. Wake up knowing exactly what breakfast, lunch, and dinner will look like.
+              </p>
+            </div>
+
+            <div className="p-8 rounded-3xl border border-line bg-bone shadow-warm-sm space-y-4">
+              <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-bone-light border border-line text-turmeric-dark shadow-warm-sm">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <h3 className="font-display text-xl font-normal text-ink">
+                Instant Culinary Swaps
+              </h3>
+              <p className="text-sm font-sans text-ink-muted leading-relaxed">
+                Craving something else or missing ingredients? Swap any meal in one tap with an equal macro alternative tailored to your pantry.
+              </p>
+            </div>
+
+            <div className="p-8 rounded-3xl border border-line bg-bone shadow-warm-sm space-y-4">
+              <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-bone-light border border-line text-herb shadow-warm-sm">
+                <Scale className="h-5 w-5" />
+              </div>
+              <h3 className="font-display text-xl font-normal text-ink">
+                Long-Arc Trajectory
+              </h3>
+              <p className="text-sm font-sans text-ink-muted leading-relaxed">
+                Watch 7-day moving averages smooth out daily water fluctuations. Celebrate sustained rhythm and nutritional cadence.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default HomePage;

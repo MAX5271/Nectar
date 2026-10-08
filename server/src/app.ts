@@ -45,6 +45,7 @@ app.use("/health", healthRouter);
 
 app.use("/api/auth/login", authLimiter);
 app.use("/api/user/signup", authLimiter);
+app.use("/api/auth/supabase-session", authLimiter);
 
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRoutes);

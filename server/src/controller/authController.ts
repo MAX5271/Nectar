@@ -2,7 +2,7 @@ import { authService } from "../services/authService.js";
 import type { Request, Response } from "express";
 import StatusCode from "../utils/statusCodes.js";
 import { HttpError } from "../utils/httpError.js";
-import { loginSchema } from "../utils/validation.js";
+import { loginSchema, guestLoginSchema, supabaseSessionSchema } from "../utils/validation.js";
 import {
   REFRESH_COOKIE,
   clearCookieOptions,
@@ -22,6 +22,43 @@ class AuthController {
     res.status(StatusCode.SUCCESS).json({
       success: true,
       message: "User logged in successfully",
+      data: { id, username, email, accessToken },
+    });
+  }
+
+  async loginAsGuest(req: Request, res: Response): Promise<void> {
+    const { supabaseAccessToken } = guestLoginSchema.parse(req.body);
+    const userAgent = req.headers["user-agent"];
+    const ipAddress = req.ip || req.socket.remoteAddress;
+
+    const { accessToken, refreshToken, username, id, email } = await authService.loginAsGuest(
+      supabaseAccessToken,
+      { userAgent, ipAddress },
+    );
+
+    res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions);
+    res.status(StatusCode.SUCCESS).json({
+      success: true,
+      message: "Signed in as guest",
+      data: { id, username, email, accessToken },
+    });
+  }
+
+  async handleSupabaseSession(req: Request, res: Response): Promise<void> {
+    const { supabaseAccessToken, profile } = supabaseSessionSchema.parse(req.body);
+    const userAgent = req.headers["user-agent"];
+    const ipAddress = req.ip || req.socket.remoteAddress;
+
+    const { accessToken, refreshToken, username, id, email } = await authService.loginWithSupabase(
+      supabaseAccessToken,
+      { userAgent, ipAddress },
+      profile,
+    );
+
+    res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions);
+    res.status(StatusCode.SUCCESS).json({
+      success: true,
+      message: "Authenticated via Supabase",
       data: { id, username, email, accessToken },
     });
   }
@@ -56,7 +93,8 @@ class AuthController {
 
   async getSessions(req: Request, res: Response): Promise<void> {
     const userId = req.id as string;
-    const sessions = await authService.getSessions(userId);
+    const currentToken = req.cookies?.[REFRESH_COOKIE];
+    const sessions = await authService.getSessions(userId, currentToken);
     res.status(StatusCode.SUCCESS).json({
       success: true,
       data: sessions,

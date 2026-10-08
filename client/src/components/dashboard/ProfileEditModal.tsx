@@ -3,6 +3,12 @@ import api from '../../services/api';
 import axios from 'axios';
 import { useAppDispatch } from '../../hooks/reduxHooks';
 import { updateUser, type AuthUser } from '../../store/slices/authSlice';
+import { Modal } from '../ui/Modal';
+import { Field } from '../ui/Field';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Button } from '../ui/Button';
+import { notify } from '../../lib/toast';
 
 interface ProfileEditModalProps {
   user: AuthUser;
@@ -27,14 +33,10 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   const [activityLevel, setActivityLevel] = useState(constraint?.activityLevel || 'SEDENTARY');
   const [preferences, setPreferences] = useState(constraint?.preferences || '');
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  if (!isOpen) return null;
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    setError('');
 
     try {
       const res = await api.patch('/user/profile', {
@@ -49,13 +51,12 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
       if (res.data.success && res.data.data) {
         dispatch(updateUser(res.data.data));
         onUpdated?.();
+        notify.success('Profile updated.');
         onClose();
       }
     } catch (err) {
-      setError(
-        axios.isAxiosError(err)
-          ? err.response?.data?.message || 'Failed to update profile.'
-          : 'Failed to update profile.',
+      notify.error(
+        axios.isAxiosError(err) ? err.response?.data?.message || "Couldn't update your profile." : "Couldn't update your profile.",
       );
     } finally {
       setIsSaving(false);
@@ -63,129 +64,62 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="border-2 border-red-600 bg-zinc-950 p-6 max-w-lg w-full shadow-[8px_8px_0px_0px_rgba(255,0,0,0.3)]">
-        <div className="flex justify-between items-center border-b-2 border-zinc-800 pb-3 mb-4">
-          <h3 className="text-sm font-black uppercase tracking-widest text-white">
-            Modify Biometrics & Goal
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-zinc-500 hover:text-white text-xs font-mono font-bold"
-          >
-            [X]
-          </button>
+    <Modal
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      title="Edit profile"
+      description="Update your stats, goal, and activity level."
+    >
+      <form onSubmit={handleSave} className="flex flex-col gap-4">
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Weight (kg)">
+            <Input type="number" step="0.1" value={weight} onChange={(e) => setWeight(Number(e.target.value))} />
+          </Field>
+          <Field label="Height (cm)">
+            <Input type="number" value={height} onChange={(e) => setHeight(Number(e.target.value))} />
+          </Field>
+          <Field label="Age">
+            <Input type="number" min="13" value={age} onChange={(e) => setAge(Number(e.target.value))} />
+          </Field>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">
-                Mass (kg)
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                value={weight}
-                onChange={(e) => setWeight(Number(e.target.value))}
-                className="w-full bg-black border border-zinc-800 p-2 text-xs font-bold text-white focus:border-red-600 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">
-                Height (cm)
-              </label>
-              <input
-                type="number"
-                value={height}
-                onChange={(e) => setHeight(Number(e.target.value))}
-                className="w-full bg-black border border-zinc-800 p-2 text-xs font-bold text-white focus:border-red-600 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">
-                Age
-              </label>
-              <input
-                type="number"
-                min="13"
-                value={age}
-                onChange={(e) => setAge(Number(e.target.value))}
-                className="w-full bg-black border border-zinc-800 p-2 text-xs font-bold text-white focus:border-red-600 focus:outline-none"
-              />
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Goal">
+            <Select value={planType} onChange={(e) => setPlanType(e.target.value)}>
+              <option value="CUTTING">Cutting (-500 kcal)</option>
+              <option value="BULKING">Bulking (+300 kcal)</option>
+              <option value="RECOMP">Recomp (0 kcal)</option>
+            </Select>
+          </Field>
+          <Field label="Activity level">
+            <Select value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)}>
+              <option value="SEDENTARY">Sedentary (x1.2)</option>
+              <option value="LIGHT">Lightly active (x1.375)</option>
+              <option value="MODERATE">Moderately active (x1.55)</option>
+              <option value="VERY_ACTIVE">Very active (x1.725)</option>
+              <option value="EXTRA_ACTIVE">Extra active (x1.9)</option>
+            </Select>
+          </Field>
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">
-                Protocol Goal
-              </label>
-              <select
-                value={planType}
-                onChange={(e) => setPlanType(e.target.value)}
-                className="w-full bg-black border border-zinc-800 p-2 text-xs font-bold text-white focus:border-red-600 focus:outline-none"
-              >
-                <option value="CUTTING">Cutting (-500 kcal)</option>
-                <option value="BULKING">Bulking (+300 kcal)</option>
-                <option value="RECOMP">Recomposition (0 kcal)</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">
-                Activity Level
-              </label>
-              <select
-                value={activityLevel}
-                onChange={(e) => setActivityLevel(e.target.value)}
-                className="w-full bg-black border border-zinc-800 p-2 text-xs font-bold text-white focus:border-red-600 focus:outline-none"
-              >
-                <option value="SEDENTARY">Sedentary (x1.2)</option>
-                <option value="LIGHT">Lightly Active (x1.375)</option>
-                <option value="MODERATE">Moderately Active (x1.55)</option>
-                <option value="VERY_ACTIVE">Very Active (x1.725)</option>
-                <option value="EXTRA_ACTIVE">Extra Active (x1.9)</option>
-              </select>
-            </div>
-          </div>
+        <Field label="Food restrictions or allergies">
+          <Input
+            type="text"
+            value={preferences}
+            onChange={(e) => setPreferences(e.target.value)}
+            placeholder="e.g. no peanuts, lactose intolerant, vegan"
+          />
+        </Field>
 
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">
-              Dietary Restrictions & Allergies
-            </label>
-            <input
-              type="text"
-              value={preferences}
-              onChange={(e) => setPreferences(e.target.value)}
-              placeholder="e.g., No peanuts, lactose intolerant, vegan"
-              className="w-full bg-black border border-zinc-800 p-2 text-xs text-white placeholder-zinc-700 focus:border-red-600 focus:outline-none"
-            />
-          </div>
-
-          {error && (
-            <p className="text-xs font-bold text-red-500 uppercase tracking-widest">
-              {error}
-            </p>
-          )}
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="flex-1 py-3 bg-red-600 text-black font-black uppercase tracking-widest text-xs hover:bg-red-500 transition-all disabled:opacity-50"
-            >
-              {isSaving ? 'Saving...' : 'Update Baseline'}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-3 border border-zinc-800 text-zinc-400 text-xs font-bold uppercase hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex gap-3 pt-2">
+          <Button type="submit" variant="primary" loading={isSaving} className="flex-1">
+            {isSaving ? 'Saving…' : 'Save changes'}
+          </Button>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };
